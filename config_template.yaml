@@ -1,0 +1,8 @@
+# Edit this
+
+hass_url: "https://my_fancy_hass.duckdns.org:8123"
+hass_token: "eyJhb--Long lived token from your user account in HASS--Fwzm4"
+hass_dashboard_slug: "dashboard-media"
+jellyfin_url: "http://my_jellyfin_probably_on_my_LAN:8096"
+jellyfin_token: "a95--Token made in Jellyfin dashboard--d91"
+output_dir: "//hass_ip_on_my_LAN/config/views/jellyboard"

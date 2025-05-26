@@ -1,0 +1,24 @@
+# Allow the GeneratedLovelaceYamls directory but keep it empty in git
+!GeneratedLovelaceYamls/
+GeneratedLovelaceYamls/*
+!GeneratedLovelaceYamls/.gitkeep
+
+# Block all episode caches
+episode_cache_*
+
+# Block Python virtual environments
+venv/
+.venv/
+ENV/
+.env/
+
+# Block config.yaml
+config.yaml
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# VSCode settings (optional, common)
+.vscode/
