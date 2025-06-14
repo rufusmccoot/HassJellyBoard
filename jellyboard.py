@@ -1,15 +1,19 @@
 import requests
-import yaml
+from ruamel.yaml import YAML
+from io import StringIO
 import os
 import warnings
 from urllib3.exceptions import InsecureRequestWarning
 import shutil
+from ruamel.yaml.scalarstring import DoubleQuotedScalarString
+from ruamel.yaml.scalarstring import FoldedScalarString
 # Suppress only the single InsecureRequestWarning from urllib3 needed for self-signed/unverified certs
 warnings.filterwarnings("ignore", category=InsecureRequestWarning)
 
 # --- LOAD CONFIG ---
+yaml_ruamel = YAML()
 with open(os.path.join(os.path.dirname(__file__), 'config.yaml'), 'r', encoding='utf-8') as f:
-    config = yaml.safe_load(f)
+    config = yaml_ruamel.load(f)
 
 JELLYFIN_URL = config.get('jellyfin_url')
 JELLYFIN_API_KEY = config.get('jellyfin_token')
@@ -18,33 +22,33 @@ OUTPUT_DIR = config.get('output_dir', r'\\172.16.0.4\config\views\jellyboard')
 # Make libraries and item_type_map available globally
 libraries = [
     {
-        "name": "TV Shows",
+        "name": "2-TV",
         "path": "tvshows",
-        "script_service": "script.jellyfin_play_content_from_tvshows",
+        "script_service": "script.jellyfin_play_tv_based_libraries",
         "icon": "steve:media-icon-tvshows"
     },
     {
-        "name": "TV Kids",
+        "name": "1-TV Kids",
         "path": "tvshowskids",
-        "script_service": "script.jellyfin_play_content_from_tv_kids",
+        "script_service": "script.jellyfin_play_tv_based_libraries",
         "icon": "steve:media-icon-tvshowskids"
     },
     {
-        "name": "Movies",
+        "name": "5-Movies",
         "path": "movies",
-        "script_service": "script.jellyfin_play_content_from_movies",
+        "script_service": "script.jellyfin_play_movie_based_libraries",
         "icon": "steve:media-icon-movies"
     },
     {
-        "name": "Movies Kids",
+        "name": "3-Movies Kids",
         "path": "movieskids",
-        "script_service": "script.jellyfin_play_content_from_movies_kids",
+        "script_service": "script.jellyfin_play_movie_based_libraries",
         "icon": "steve:media-icon-movieskids"
     },
     {
-        "name": "Christmas Movies",
+        "name": "4-Movies Christmas",
         "path": "movieschristmas",
-        "script_service": "script.jellyfin_play_content_from_movies_christmas",
+        "script_service": "script.jellyfin_play_movie_based_libraries",
         "icon": "steve:media-icon-movieschristmas"
     },
     {
@@ -55,11 +59,11 @@ libraries = [
     }
 ]
 item_type_map = {
-    "TV Shows": "Series",
-    "TV Kids": "Series",
-    "Movies": "Movie",
-    "Movies Kids": "Movie",
-    "Christmas Movies": "Movie",
+    "2-TV": "Series",
+    "1-TV Kids": "Series",
+    "5-Movies": "Movie",
+    "3-Movies Kids": "Movie",
+    "4-Movies Christmas": "Movie",
     "Music": "Audio",
     "Random": "Series"
 }
@@ -95,7 +99,7 @@ def get_tv_shows():
     return resp.json()
 
 # --- GENERATE YAML (SKELETON) ---
-def generate_lovelace_yaml(tv_shows, library_title="TV Shows", library_path="tvshows", script_service="script.jellyfin_play_content_from_tvshows", icon=None, jellyfin_views=None):
+def generate_lovelace_yaml(tv_shows, library_title="2-TV Shows", library_path="tvshows", script_service="script.jellyfin_play_content_from_tvshows", icon=None, jellyfin_views=None):
     """
     Generate a Home Assistant Lovelace view YAML for a given Jellyfin TV show library.
     """
@@ -135,31 +139,40 @@ def generate_lovelace_yaml(tv_shows, library_title="TV Shows", library_path="tvs
         entity_picture = f"{JELLYFIN_URL}/Items/{show_id}/Images/Primary?api_key={JELLYFIN_API_KEY}"
         card = {
             "type": "custom:button-card",
-            "variables": {"this_media": show_name, "media_id": show_id, "media_type": collection_type},
+            "variables": {"this_media": DoubleQuotedScalarString(show_name), "media_id": show_id, "media_type": collection_type},
             "name": '[[[ return variables.this_media; ]]]',
             "confirmation": {
-                "text": '[[[ return "Do you want to play \"" + variables.this_media + "\"?"; ]]]'
+                "text": FoldedScalarString('[[[ return "Do you want to play \\x22" + variables.this_media + "\\x22?"; ]]]')
             },
             "aspect_ratio": "1/1.5",
             "size": 150,
             "styles": None,
             "card": [
-                "height: 100px",
-                "--mdc-ripple-color: blue",
-                "--mdc-ripple-press-opacity: 0.5"
+                {"height": "100px"},  
+                {"--mdc-ripple-color": "blue"},
+                {"--mdc-ripple-press-opacity": "0.5"}
             ],
             "entity_picture": entity_picture,
             "show_entity_picture": True,
             "show_name": True,
             "show_icon": False,
-            "tap_action": {
-                "action": "call-service",
-                "service": script_service,
-                "service_data": {
-                    "media_id": '[[[ return variables.media_id; ]]]',
-                    "media_type": '[[[ return variables.media_type; ]]]'
+            # For movie libraries, call the movie script and pass media_content_id
+            "tap_action": (
+                {
+                    "action": "call-service",
+                    "service": script_service,
+                    "service_data": {
+                        "media_content_id": '[[[ return variables.media_id; ]]]'
+                    }
+                } if script_service == "script.jellyfin_play_movie_based_libraries" else {
+                    "action": "call-service",
+                    "service": script_service,
+                    "service_data": {
+                        "media_id": '[[[ return variables.media_id; ]]]',
+                        "media_type": '[[[ return variables.media_type; ]]]'
+                    }
                 }
-            }
+            )
         }
         cards.append(card)
 
@@ -206,8 +219,13 @@ def generate_lovelace_yaml(tv_shows, library_title="TV Shows", library_path="tvs
             }
         ]
     }
-    # Use yaml.dump with indent=2 and default_flow_style=False for correct formatting
-    return yaml.dump(view, sort_keys=False, default_flow_style=False, indent=2)
+    # Use ruamel.yaml for correct Home Assistant/Lovelace indentation
+    yaml_ruamel = YAML()
+    yaml_ruamel.default_flow_style = False
+    yaml_ruamel.indent(mapping=2, sequence=4, offset=2)
+    stream = StringIO()
+    yaml_ruamel.dump(view, stream)
+    return stream.getvalue()
 
 def print_jellyfin_libraries():
     """Fetch and print all library (folder) names and IDs from Jellyfin."""
@@ -236,7 +254,7 @@ def webhook():
     print('Webhook received:', data)
     # If webhook Type or ItemType is 'Movie', refresh YAML for all movie libraries
     if data.get('Type') == 'Movie' or data.get('ItemType') == 'Movie':
-        print('Webhook Type or ItemType is Movie. Triggering YAML rebuild for all movie libraries (Movies, Movies Kids, Christmas Movies).')
+        print('Webhook Type or ItemType is Movie. Triggering YAML rebuild for all movie libraries (5-Movies, 3-Movies Kids, 4-Movies Christmas).')
         for lib in libraries:
             if item_type_map.get(lib['name']) == 'Movie':
                 print(f'Triggering YAML rebuild for library: {lib["name"]}')
@@ -297,8 +315,8 @@ def webhook():
         return '', 204
     print(f'Triggering YAML rebuild for library: {library_name}')
     threading.Thread(target=rebuild_yaml, args=(library_name,)).start()
-    # Also trigger cache rebuild for TV Shows or TV Kids
-    if library_name in ("TV Shows", "TV Kids"):
+    # Also trigger cache rebuild for 2-TV or 1-TV Kids
+    if library_name in ("2-TV", "1-TV Kids"):
         print(f'It is a TV library so we are also triggering cache rebuild for library: {library_name}')
         threading.Thread(target=rebuild_cache, args=(library_name,)).start()
     return '', 204
@@ -322,11 +340,52 @@ def rebuild_cache_endpoint(library):
     threading.Thread(target=rebuild_cache, args=(library,)).start()
     return jsonify({'status': 'rebuilding_cache', 'library': library})
 
-@app.route('/random_episode', methods=['GET'])
-def random_episode():
-    series_id = request.args.get('series_id')
-    print(f'Request for random episode from series {series_id}')
-    return jsonify({'episode_id': 'placeholder-episode-id'})
+
+@app.route('/play_random_episode', methods=['POST'])
+def play_random_episode():
+    data = request.get_json(force=True)
+    series_id = data.get('series_id')
+    if not series_id:
+        return jsonify({'error': 'Missing series_id'}), 400
+    print(f"Play random episode requested for series {series_id}")
+    # Step 1: Pick a random episode
+    headers = {"X-Emby-Token": JELLYFIN_API_KEY}
+    url = f"{JELLYFIN_URL}/Shows/{series_id}/Episodes"
+    try:
+        resp = requests.get(url, headers=headers, verify=False)
+        resp.raise_for_status()
+        episodes = resp.json().get('Items', [])
+        if not episodes:
+            return jsonify({'error': 'No episodes found'}), 404
+        episode = random.choice(episodes)
+        episode_id = episode.get('Id')
+        print(f"Selected random episode {episode_id} from series {series_id}")
+    except Exception as e:
+        print(f"Error fetching episodes for series {series_id}: {e}")
+        return jsonify({'error': str(e)}), 500
+    # Step 2: Trigger Home Assistant to play the episode
+    ha_url = config.get('hass_url')
+    ha_token = config.get('hass_token')
+    media_player_entity = 'media_player.living_room_tv_jelly'
+    ha_headers = {
+        "Authorization": f"Bearer {ha_token}",
+        "Content-Type": "application/json",
+    }
+    ha_data = {
+        "entity_id": media_player_entity,
+        "media_content_id": episode_id,
+        "media_content_type": "video"
+    }
+    try:
+        ha_resp = requests.post(f"{ha_url}/api/services/media_player/play_media", headers=ha_headers, json=ha_data, verify=False)
+        print(f"Triggered play_media in Home Assistant: {ha_resp.status_code} {ha_resp.text}")
+        if ha_resp.ok:
+            return jsonify({'status': 'playing', 'episode_id': episode_id})
+        else:
+            return jsonify({'error': 'Failed to trigger playback', 'details': ha_resp.text}), 500
+    except Exception as e:
+        print(f"Error triggering Home Assistant playback: {e}")
+        return jsonify({'error': str(e)}), 500
 
 def update_library_ids():
     """Fetch library IDs from Jellyfin and update the global libraries list."""
@@ -413,7 +472,7 @@ def rebuild_yaml(library):
 import json
 
 def normalize_name(name):
-    return name.lower().replace(' ', '').replace('_', '')
+    return name.lower().replace(' ', '').replace('_', '').replace('-', '')
 
 def get_cache_path(library):
     safe_name = library.lower().replace(" ", "_")
@@ -440,15 +499,15 @@ def rebuild_cache(library):
     try:
         # Map library name to Jellyfin item types
         item_type_map = {
-            "TV Shows": "Series",
-            "TV Kids": "Series"
+            "2-TV": "Series",
+            "1-TV Kids": "Series"
         }
         # Use the normalized name to match the library
         normalized_library = normalize_name(library)
-        if normalized_library in ["tvshows", "tv"]:
-            jellyfin_lib_name = "TV Shows"
-        elif normalized_library in ["tvkids"]:
-            jellyfin_lib_name = "TV Kids"
+        if normalized_library in ["tvshows", "tv","2tv"]:
+            jellyfin_lib_name = "2-TV"
+        elif normalized_library in ["tvkids","1tvkids"]:
+            jellyfin_lib_name = "1-TV Kids"
         else:
             print(f"Unsupported library for cache: {library}")
             return
@@ -518,11 +577,11 @@ if __name__ == "__main__":
 
     # Map library name to Jellyfin item types (customize as needed)
     item_type_map = {
-        "TV Shows": "Series",
-        "TV Shows-Kids": "Series",
-        "Movies": "Movie",
-        "Movies-Kids": "Movie",
-        "Movies Christmas": "Movie",
+        "2-TV": "Series",
+        "1-TV Kids": "Series",
+        "5-Movies": "Movie",
+        "3-Movies Kids": "Movie",
+        "4-Movies Christmas": "Movie",
         "Music": "Audio",
         "Random": "Series"
     }
@@ -565,4 +624,4 @@ if __name__ == "__main__":
             print(f"Copied {filename} to {dest_path}")
         except Exception as e:
             print(f"Failed to copy {filename} to {OUTPUT_DIR}: {e}")
-    print("All library YAMLs generated in 'GeneratedLovelaceYamls' and copied! 😘")
+    print("All library YAMLs generated in 'GeneratedLovelaceYamls' and copied!")
