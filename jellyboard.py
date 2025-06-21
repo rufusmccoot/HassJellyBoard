@@ -306,6 +306,74 @@ def rebuild_cache_endpoint(library):
 # In-memory state for randomizer
 RANDOMIZER_STATE = {}
 
+@app.route('/play_movie', methods=['POST'])
+def play_movie():
+    config_path = os.path.join(os.path.dirname(__file__), 'config.yaml')
+    yaml_ruamel = YAML()
+    # Defensive: extract item_id from JSON or query param
+    if LOG_LEVEL > 1:
+        log_green(f"play_movie request: args={dict(request.args)}, json={request.get_json(silent=True)}")
+    item_id = request.args.get('item_id')
+    if not item_id:
+        data = request.get_json(silent=True) or {}
+        item_id = data.get('item_id')
+    if not item_id:
+        log_red("Missing item_id in both query params and JSON body")
+        log_red(f"Request.args: {dict(request.args)}")
+        log_red(f"Request.get_json(silent=True): {request.get_json(silent=True)}")
+        return jsonify({'error': 'Missing item_id'}), 400
+    # Load config each time to get updated session id
+    with open(config_path, 'r', encoding='utf-8') as f:
+        config_data = yaml_ruamel.load(f)
+    session_id = config_data.get('android_tv_session_id', 'ab2f036321e914934450c05ea24fc36b')
+    headers = {"X-Emby-Token": JELLYFIN_API_KEY}
+    # Get movie name from Jellyfin
+    movie_name = None
+    try:
+        url = f"{JELLYFIN_URL}/Items"
+        params = {"ids": item_id, "api_key": JELLYFIN_API_KEY}
+        resp = requests.get(url, params=params, verify=False)
+        if resp.status_code == 200:
+            items = resp.json().get("Items", [])
+            if items and "Name" in items[0]:
+                movie_name = items[0]["Name"]
+            else:
+                movie_name = "Unknown Movie"
+        else:
+            log_red(f"Could not fetch movie {item_id}: {resp.status_code} {resp.text}")
+            movie_name = "Unknown Movie"
+    except Exception as e:
+        log_red(f"Error fetching movie name for {item_id}: {e}")
+        movie_name = "Unknown Movie"
+    # Toast (parallel)
+    toast_data = {
+        "header": f"Playing movie",
+        "text": movie_name
+    }
+    toast_url = f"{JELLYFIN_URL}/Sessions/{session_id}/Message"
+    try:
+        threading.Thread(target=send_toast, args=(toast_url, headers, toast_data), daemon=True).start()
+    except Exception as e:
+        log_red(f"Toast failed: {e}")
+    # Play command
+    play_url = f"{JELLYFIN_URL}/Sessions/{session_id}/Playing"
+    play_params = {
+        "playCommand": "PlayNow",
+        "ItemIds": item_id
+    }
+    if LOG_LEVEL > 1:
+        log_green(f"Sending play command as query params: {play_params} to {play_url}")
+    play_resp = requests.post(play_url, headers=headers, params=play_params, verify=False)
+    if LOG_LEVEL > 1:
+        log_green(f"Jellyfin response: {play_resp.status_code}")
+    if play_resp.ok:
+        log_green(f"{delimiter}")
+        log_green(f"Played movie '{movie_name}' | Item: {item_id} | Jellyfin 200 OK.")
+        return jsonify({'status': 'playing', 'item_id': item_id, 'session_id': session_id})
+    else:
+        log_red(f"Failed to play movie '{movie_name}' | Item: {item_id} | Jellyfin error: {play_resp.text}")
+        return jsonify({'error': 'Failed to trigger movie playback on Jellyfin', 'details': play_resp.text}), 500
+
 @app.route('/play_random_episode', methods=['POST'])
 def play_random_episode():
     # --- CONFIG ---
@@ -470,8 +538,12 @@ def jf_webhook():
     else:
         event_short_name = notification_type
     log_cyan(f"{delimiter}")
-    log_cyan(f"{event_short_name} [{series_name} - S{season_num}E{episode_num}] on {client}")
-    log_cyan(f"{event_short_name} [Series ID: {series_id} | Episode ID: {item_id}]")
+    if series_id:
+        log_cyan(f"{event_short_name} [{series_name} - S{season_num}E{episode_num}] on {client}")
+        log_cyan(f"{event_short_name} [Series ID: {series_id} | Episode ID: {item_id}]")
+    else:
+        log_cyan(f"{event_short_name} movie on {client}")
+        log_cyan(f"{event_short_name} [Movie ID: {item_id}]")
     # Support both Emby-style and flat Jellyfin notification formats
     # Event type
     event = data.get("Event") or data.get("NotificationType")
