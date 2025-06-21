@@ -9,6 +9,11 @@ from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 from ruamel.yaml.scalarstring import FoldedScalarString
 # Suppress only the single InsecureRequestWarning from urllib3 needed for self-signed/unverified certs
 warnings.filterwarnings("ignore", category=InsecureRequestWarning)
+import threading
+from flask import Flask, request, jsonify
+import random
+import time
+from ruamel.yaml import YAML
 
 # --- LOAD CONFIG ---
 yaml_ruamel = YAML()
@@ -18,15 +23,31 @@ with open(os.path.join(os.path.dirname(__file__), 'config.yaml'), 'r', encoding=
 JELLYFIN_URL = config.get('jellyfin_url')
 JELLYFIN_API_KEY = config.get('jellyfin_token')
 OUTPUT_DIR = config.get('output_dir', r'\\172.16.0.4\config\views\jellyboard')
+LOG_LEVEL = config.get('log_level', 1)
 
 from datetime import datetime
 
 CYAN = "\033[36m"
+GREEN = "\033[32m"
+YELLOW = "\033[33m"
+RED = "\033[31m"
 RESET = "\033[0m"
-
+delimiter = "----------------------------------------------------------"
 def log_cyan(msg):
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print(f"{CYAN}[{now}] {msg}{RESET}")
+
+def log_green(msg):
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"{GREEN}[{now}] {msg}{RESET}")
+
+def log_yellow(msg):
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"{YELLOW}[{now}] {msg}{RESET}")
+
+def log_red(msg):
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"{RED}[{now}] {msg}{RESET}")
 
 # Make libraries and item_type_map available globally
 libraries = [
@@ -77,6 +98,15 @@ item_type_map = {
     "Random": "Series"
 }
 
+def send_toast(toast_url, headers, toast_data):
+    try:
+        toast_resp = requests.post(toast_url, headers=headers, json=toast_data, verify=False)
+        toast_resp.raise_for_status()
+        if LOG_LEVEL > 1:
+            log_green(f"Toast sent: '{toast_data['header']}: {toast_data['text']}'")
+    except Exception as e:
+        log_red(f"Toast failed: {e}")
+
 # --- FETCH TV SHOWS ---
 def get_user_id():
     headers = {"X-Emby-Token": JELLYFIN_API_KEY}
@@ -85,14 +115,14 @@ def get_user_id():
     if resp.status_code == 200:
         users = resp.json()
         if not users:
-            raise Exception("[Jellyboard] No users found in Jellyfin.")
+            raise Exception("No users found in Jellyfin.")
         if len(users) > 1:
             log_cyan(f"Multiple users found in Jellyfin. Using the first user: {users[0]['Name']}")
         else:
             log_cyan(f"Using Jellyfin user: {users[0]['Name']}")
         return users[0]["Id"]
     else:
-        raise Exception(f"[Jellyboard] Failed to get user ID from /Users. Response: {resp.text}")
+        raise Exception(f"Failed to get user ID from /Users. Response: {resp.text}")
 
 def get_tv_shows():
     headers = {"X-Emby-Token": JELLYFIN_API_KEY}
@@ -251,223 +281,251 @@ def print_jellyfin_libraries():
         log_cyan(f"Error fetching Jellyfin libraries: {e}")
         log_cyan(f"Response content: {getattr(resp, 'text', 'No response')}")
 
-from flask import Flask, request, jsonify
-import threading
-import random
+
 
 app = Flask(__name__)
 
-@app.route('/webhook', methods=['POST'])
-def webhook():
-    data = request.json
-    log_cyan('Webhook received:', data)
-    # If webhook Type or ItemType is 'Movie', refresh YAML for all movie libraries
-    if data.get('Type') == 'Movie' or data.get('ItemType') == 'Movie':
-        log_cyan('Webhook Type or ItemType is Movie. Triggering YAML rebuild for all movie libraries (5-Movies, 3-Movies Kids, 4-Movies Christmas).')
-        for lib in libraries:
-            if item_type_map.get(lib['name']) == 'Movie':
-                log_cyan(f'Triggering YAML rebuild for library: {lib["name"]}')
-                threading.Thread(target=rebuild_yaml, args=(lib['name'],)).start()
-        return '', 204
-
-    # If ItemType is Series, Season, or Episode, refresh YAML and cache for all tv libraries
-    if data.get('ItemType') in ('Series', 'Season', 'Episode'):
-        log_cyan('Webhook ItemType is Series/Season/Episode. Debounced: Triggering YAML and cache rebuild for all TV libraries (Series) only if not rebuilt recently.')
-        import time
-        global last_rebuild_time
-        try:
-            last_rebuild_time
-        except NameError:
-            last_rebuild_time = {}
-        DEBOUNCE_SECONDS = 30
-        now = time.time()
-        for lib in libraries:
-            if item_type_map.get(lib['name']) == 'Series':
-                last = last_rebuild_time.get(lib['name'], 0)
-                if now - last > DEBOUNCE_SECONDS:
-                    last_rebuild_time[lib['name']] = now
-                    log_cyan(f'Triggering YAML rebuild for library: {lib["name"]}')
-                    threading.Thread(target=rebuild_yaml, args=(lib['name'],)).start()
-                    log_cyan(f'Triggering cache rebuild for library: {lib["name"]}')
-                    threading.Thread(target=rebuild_cache, args=(lib['name'],)).start()
-                else:
-                    log_cyan(f"Skipping redundant rebuild for {lib["name"]} (debounced)")
-        return '', 204
-
-    # Try to find the library name from ancestors if present
-    library_name = None
-    ancestors = data.get('Ancestors', [])
-    if ancestors:
-        for ancestor in ancestors:
-            if ancestor.get('Type') == 'Folder':
-                library_name = ancestor.get('Name')
-                break
-    # If not found, try to fetch item details from Jellyfin
-    if not library_name and 'ItemId' in data:
-        item_id = data['ItemId']
-        headers = {"X-Emby-Token": JELLYFIN_API_KEY}
-        url = f"{JELLYFIN_URL}/Items/{item_id}"
-        try:
-            resp = requests.get(url, headers=headers, verify=False)
-            resp.raise_for_status()
-            item = resp.json()
-            # Try to get the library name from the response
-            if 'Library' in item and 'Name' in item['Library']:
-                library_name = item['Library']['Name']
-            elif 'ParentId' in item:
-                # Optionally, walk up to the root parent if needed (not implemented here)
-                log_cyan(f"Could not directly determine library for item {item_id}, ParentId: {item['ParentId']}")
-        except Exception as e:
-            log_cyan(f"Error fetching item details for library lookup: {e}")
-    if not library_name:
-        log_cyan('Could not determine library from webhook, skipping YAML rebuild.')
-        return '', 204
-    log_cyan(f'Triggering YAML rebuild for library: {library_name}')
-    threading.Thread(target=rebuild_yaml, args=(library_name,)).start()
-    # Also trigger cache rebuild for 2-TV or 1-TV Kids
-    if library_name in ("2-TV", "1-TV Kids"):
-        log_cyan(f'It is a TV library so we are also triggering cache rebuild for library: {library_name}')
-        threading.Thread(target=rebuild_cache, args=(library_name,)).start()
-    return '', 204
-
 @app.route('/rebuild_yaml/<library>', methods=['POST', 'GET'])
 def rebuild_yaml_endpoint(library):
-    log_cyan(f'YAML rebuild triggered for library: {library}')
+    log_yellow(f'YAML rebuild triggered for library: {library}')
     threading.Thread(target=rebuild_yaml, args=(library,)).start()
     return jsonify({'status': 'rebuilding', 'library': library})
 
 @app.route('/rebuild_yaml/all', methods=['POST', 'GET'])
 def rebuild_yaml_all():
-    log_cyan('YAML rebuild triggered for all libraries')
+    log_yellow('YAML rebuild triggered for all libraries')
     threading.Thread(target=rebuild_yaml, args=('all',)).start()
     return jsonify({'status': 'rebuilding', 'library': 'all'})
 
-
 @app.route('/rebuild_cache/<library>', methods=['POST', 'GET'])
 def rebuild_cache_endpoint(library):
-    log_cyan(f'Cache rebuild triggered for library: {library}')
+    log_yellow(f'Cache rebuild triggered for library: {library}')
     threading.Thread(target=rebuild_cache, args=(library,)).start()
     return jsonify({'status': 'rebuilding_cache', 'library': library})
-
 
 # In-memory state for randomizer
 RANDOMIZER_STATE = {}
 
 @app.route('/play_random_episode', methods=['POST'])
 def play_random_episode():
-    data = request.get_json(force=True)
-    series_id = data.get('series_id')
+    # --- CONFIG ---
+    config_path = os.path.join(os.path.dirname(__file__), 'config.yaml')
+    yaml_ruamel = YAML()
+    # Defensive: extract series_id from JSON or query param
+    if LOG_LEVEL > 1:
+        log_green(f"play_random_episode request: args={dict(request.args)}, json={request.get_json(silent=True)}")
+    series_id = request.args.get('series_id')
     if not series_id:
+        data = request.get_json(silent=True) or {}
+        series_id = data.get('series_id')
+    if not series_id:
+        log_red("Missing series_id in both query params and JSON body")
         return jsonify({'error': 'Missing series_id'}), 400
-    log_cyan(f'Requesting random episode for series {series_id}')
-    # Step 1: Pick a random episode
+    # Load config each time to get updated session id
+    with open(config_path, 'r', encoding='utf-8') as f:
+        config_data = yaml_ruamel.load(f)
+    ADMIN_USER_ID = config_data.get('admin_user_id', 'admin')
+    ANDROID_TV_SESSION_ID = config_data.get('android_tv_session_id', 'ab2f036321e914934450c05ea24fc36b')
+    # Find which cache file contains the requested series_id
+    cache_dir = os.getcwd()
+    cache_files = [f for f in os.listdir(cache_dir) if f.startswith('episode_cache_') and f.endswith('.yaml')]
+    cache = None
+    cache_file_used = None
+    for fname in cache_files:
+        path = os.path.join(cache_dir, fname)
+        try:
+            with open(path, 'r', encoding='utf-8') as f:
+                file_cache = yaml_ruamel.load(f) or []
+            if any(s for s in file_cache if s['series_id'] == series_id):
+                cache = file_cache
+                cache_file_used = fname
+                break
+        except Exception as e:
+            log_red(f"Failed to read cache file {fname}: {e}")
+    if not cache:
+        log_red(f"Series {series_id} not found in any episode_cache_*.yaml file.")
+        return jsonify({'error': 'Series not found in cache'}), 404
+    series_entry = next((s for s in cache if s['series_id'] == series_id), None)
+    if not series_entry:
+        log_red(f"Series {series_id} not found in cache file {cache_file_used}.")
+        return jsonify({'error': 'Series not found in cache'}), 404
+    episode_ids = series_entry.get('episode_ids', [])
+    if not episode_ids:
+        log_red(f"No episodes cached for series {series_id} (cache file: {cache_file_used}).")
+        return jsonify({'error': 'No episodes found in cache'}), 404
+    show_name = series_entry.get('series_name', 'Unknown')
+    episode_id = random.choice(episode_ids)
+    if LOG_LEVEL > 1:
+        log_green(f"Selected random episode {episode_id} from series {series_id} ({show_name}) using cache file {cache_file_used}")
+
+    def update_session_id_in_config(new_session_id):
+        config_data['android_tv_session_id'] = new_session_id
+        with open(config_path, 'w', encoding='utf-8') as f:
+            yaml_ruamel.dump(config_data, f)
+        log_green(f"Updated android_tv_session_id in config.yaml to {new_session_id}")
+
+    # At this point, cache, series_entry, episode_ids, show_name, episode_id are all set from the correct cache file
+    # Step 2: Use session id from config, fallback to search if needed
+    session_id = ANDROID_TV_SESSION_ID
     headers = {"X-Emby-Token": JELLYFIN_API_KEY}
-    user_id = get_user_id()
-    url = f"{JELLYFIN_URL}/Users/{user_id}/Items"
-    params = {
-        "ParentId": series_id,
-        "IncludeItemTypes": "Episode",
-        "Recursive": "true"
+
+    # Display toast alerting user to what we are playing
+    toast_data = {
+        "header": f"Playing random episode of",
+        "text": show_name
     }
-    log_cyan(f"Fetching episodes for series {series_id}")
+    toast_url = f"{JELLYFIN_URL}/Sessions/{session_id}/Message"
     try:
-        resp = requests.get(url, headers=headers, params=params, verify=False)
-        log_cyan(f"  Jellyfin response: {resp.status_code}")
-        resp.raise_for_status()
-        episodes = resp.json().get('Items', [])
-        if not episodes:
-            log_cyan(f"  No episodes found for series {series_id}")
-            return jsonify({'error': 'No episodes found'}), 404
-        episode = random.choice(episodes)
-        episode_id = episode.get('Id')
-        log_cyan(f"Selected random episode {episode_id} from series {series_id}")
+        threading.Thread(target=send_toast, args=(toast_url, headers, toast_data), daemon=True).start()
     except Exception as e:
-        log_cyan(f"Error fetching episodes for series {series_id}: {e}")
-        return jsonify({'error': str(e)}), 500
-    # Step 2: Trigger Jellyfin to play the episode on Android TV client
-    headers = {"X-Emby-Token": JELLYFIN_API_KEY}
-    try:
-        # Fetch all active sessions
-        sessions_url = f"{JELLYFIN_URL}/Sessions"
-        log_cyan(f"Fetching sessions from: {sessions_url}")
-        sessions_resp = requests.get(sessions_url, headers=headers, verify=False)
-        sessions_resp.raise_for_status()
-        sessions = sessions_resp.json()
-        android_tv_session = next((s for s in sessions if s.get("Client") == "Android TV"), None)
-        if not android_tv_session:
-            log_cyan("No active Android TV session found.")
-            return jsonify({'error': 'No active Android TV session found'}), 404
-        session_id = android_tv_session.get("Id")
-        log_cyan(f"Using Android TV session id: {session_id}")
-        # Save randomizer state in memory
-        RANDOMIZER_STATE = {
-            "session_id": session_id,
-            "series_id": series_id,
-            "last_episode_id": episode_id
-        }
-        # Display toast alerting user to what we are playing
-        show_name = get_show_name_by_series_id(series_id)
-        if show_name:
-            toast_data = {
-                "header": f"Playing random episode of",
-                "text": show_name
-            }
-            toast_url = f"{JELLYFIN_URL}/Sessions/{session_id}/Message"
-            toast_resp = requests.post(toast_url, headers=headers, json=toast_data, verify=False)
-            toast_resp.raise_for_status()
-            log_cyan(f"Toast sent: '{toast_data['header']}: {toast_data['text']}'")
-        # Send play command as query parameters
-        play_url = f"{JELLYFIN_URL}/Sessions/{session_id}/Playing"
-        play_params = {
-            "playCommand": "PlayNow",
-            "ItemIds": episode_id
-        }
-        log_cyan(f"Sending play command as query params: {play_params} to {play_url}")
-        play_resp = requests.post(play_url, headers=headers, params=play_params, verify=False)
-        log_cyan(f"  Jellyfin response: {play_resp.status_code}")
-        if play_resp.ok:
-            return jsonify({'status': 'playing', 'episode_id': episode_id, 'session_id': session_id})
-        else:
-            log_cyan(f"Play command error: {play_resp.text[:200]}")
-            return jsonify({'error': 'Failed to trigger playback on Jellyfin', 'details': play_resp.text}), 500
-    except Exception as e:
-        log_cyan(f"Error triggering Jellyfin playback: {e}")
-        return jsonify({'error': str(e)}), 500
+        log_red(f"Toast failed: {e}")
+    # Save randomizer state in memory
+    global RANDOMIZER_STATE
+    RANDOMIZER_STATE = {
+        "session_id": session_id,
+        "series_id": series_id
+    }
+    # Send play command as query parameters
+    play_url = f"{JELLYFIN_URL}/Sessions/{session_id}/Playing"
+    play_params = {
+        "playCommand": "PlayNow",
+        "ItemIds": episode_id
+    }
+    if LOG_LEVEL > 1:
+        log_green(f"Sending play command as query params: {play_params} to {play_url}")
+    play_resp = requests.post(play_url, headers=headers, params=play_params, verify=False)
+    if LOG_LEVEL > 1:
+        log_green(f"Jellyfin response: {play_resp.status_code}")
+    if play_resp.ok:
+        log_green(f"{delimiter}")
+        log_green(f"Played '{show_name}' | Series: {series_id} | Episode: {episode_id} | Jellyfin 200 OK.")
+        return jsonify({'status': 'playing', 'episode_id': episode_id, 'session_id': session_id})
+    # Fallback: try to rediscover session if play failed
+    log_red(f"Play command failed, attempting to rediscover session.")
+    for retry in range(2):
+        try:
+            sessions_url = f"{JELLYFIN_URL}/Sessions"
+            sessions_resp = requests.get(sessions_url, headers=headers, verify=False)
+            sessions_resp.raise_for_status()
+            sessions = sessions_resp.json()
+            android_tv_session = next((s for s in sessions if s.get("Client") == "Android TV"), None)
+            if not android_tv_session:
+                log_red("No active Android TV session found. Will retry in 5s..." if retry == 0 else "Giving up after second try.")
+                if retry == 0:
+                    time.sleep(5)
+                    continue
+                else:
+                    return jsonify({'error': 'No active Android TV session found'}), 404
+            session_id = android_tv_session.get("Id")
+            log_green(f"Recovered Android TV session id: {session_id}")
+            update_session_id_in_config(session_id)
+            RANDOMIZER_STATE["session_id"] = session_id
+            # Retry play command
+            play_url = f"{JELLYFIN_URL}/Sessions/{session_id}/Playing"
+            play_resp = requests.post(play_url, headers=headers, params=play_params, verify=False)
+            log_green(f"Jellyfin response (retry): {play_resp.status_code}")
+            if play_resp.ok:
+                return jsonify({'status': 'playing', 'episode_id': episode_id, 'session_id': session_id})
+            else:
+                log_green(f"Play command error (retry): {play_resp.text[:200]}")
+                return jsonify({'error': 'Failed to trigger playback on Jellyfin (retry)', 'details': play_resp.text}), 500
+        except Exception as e:
+            log_red(f"Error rediscovering session or retrying play: {e}")
+            if retry == 0:
+                time.sleep(5)
+                continue
+            return jsonify({'error': str(e)}), 500
 
 @app.route('/jf_webhook', methods=['POST'])
 def jf_webhook():
-    data = request.json
-    log_cyan("Received webhook")
-    event = data.get("Event")
-    session = data.get("Session", {})
-    client = session.get("Client")
-    session_id = session.get("Id")
-    item_id = data.get("ItemId")
+    if LOG_LEVEL > 1:
+        log_cyan(f"Webhook received from {request.remote_addr} with Content-Type: {request.content_type}")
+    try:
+        data = request.get_json(force=True)
+    except Exception as e:
+        log_red(f"Failed to parse JF webhookJSON: {e}")
+        data = None
+    if not data:
+        try:
+            raw = request.data.decode('utf-8', errors='replace')
+            if LOG_LEVEL > 1:
+                log_cyan(f"Raw webhook body: {raw}")
+        except Exception as e:
+            log_red(f"Could not decode raw body: {e}")
+        return jsonify({"error": "Unsupported content type or invalid JSON"}), 415
+    # Build concise cyan log for key fields
+    notification_type = data.get("NotificationType") or data.get("Event")
+    series_name = data.get("SeriesName") or (data.get("Item", {}) or {}).get("SeriesName")
+    series_id = data.get("SeriesId") or (data.get("Item", {}) or {}).get("SeriesId")
+    season_num = data.get("SeasonNumber00") or (data.get("Item", {}) or {}).get("SeasonNumber00")
+    episode_num = data.get("EpisodeNumber00") or (data.get("Item", {}) or {}).get("EpisodeNumber00")
+    episode_name = data.get("Name") or (data.get("Item", {}) or {}).get("Name")
+    item_id = data.get("ItemId") or data.get("MediaSourceId") or data.get("Id")
+    session_id = data.get("Id") or (data.get("Session", {}) or {}).get("Id")
+    client = (data.get("Client") or data.get("ClientName") or data.get("DeviceName") or (data.get("Session", {}) or {}).get("Client"))
+    if notification_type == 'PlaybackStart':
+        event_short_name = 'Started'
+    elif notification_type == 'PlaybackStop':
+        event_short_name = 'Stopped'
+    else:
+        event_short_name = notification_type
+    log_cyan(f"{delimiter}")
+    log_cyan(f"{event_short_name} [{series_name} - S{season_num}E{episode_num}] on {client}")
+    log_cyan(f"{event_short_name} [Series ID: {series_id} | Episode ID: {item_id}]")
+    # Support both Emby-style and flat Jellyfin notification formats
+    # Event type
+    event = data.get("Event") or data.get("NotificationType")
+    # Client info
+    client = None
+    if "Session" in data and isinstance(data["Session"], dict):
+        client = data["Session"].get("Client")
+    if not client:
+        client = data.get("Client") or data.get("ClientName") or data.get("DeviceName")
+    # Session ID
+    session_id = None
+    if "Session" in data and isinstance(data["Session"], dict):
+        session_id = data["Session"].get("Id")
+    if not session_id:
+        session_id = data.get("Id") or data.get("SessionId")
+    # Item ID
+    item_id = data.get("ItemId") or data.get("MediaSourceId") or data.get("Id")
+    # Item info
     item = data.get("Item", {})
-    position = data.get("PositionTicks", 0)
-    duration = item.get("RunTimeTicks", 0)
-    log_cyan(f"Event: {event}")
-    log_cyan(f"Client: {client}")
-    log_cyan(f"SessionId: {session_id}")
-    log_cyan(f"ItemId: {item_id}")
-    log_cyan(f"Position: {position}")
-    log_cyan(f"Duration: {duration}")
+    # Position/Duration
+    position = data.get("PositionTicks", 0) or data.get("PlaybackPositionTicks", 0)
+    duration = item.get("RunTimeTicks", 0) or data.get("RunTimeTicks", 0)
     global RANDOMIZER_STATE
     # Only act if playback stopped on Android TV and it finished naturally, and state matches
-    if event == "PlaybackStopped" and client == "Android TV":
-        log_cyan("Since client is Android TV, checking to see if we were randomizing")
+    if (event in ["PlaybackStopped", "PlaybackStop"]) and (client == "Android TV"):
+        if LOG_LEVEL > 1:
+            log_cyan("Since client is Android TV, checking to see if we were randomizing")
+        # Ticks: some webhooks use PlaybackPositionTicks, others PositionTicks
+        # Use series_id from webhook (flat or nested)
+        webhook_series_id = data.get("SeriesId") or (data.get("Item", {}) or {}).get("SeriesId")
         if (RANDOMIZER_STATE.get("session_id") == session_id and
-            RANDOMIZER_STATE.get("last_episode_id") == item_id and
+            RANDOMIZER_STATE.get("series_id") == webhook_series_id and
             duration and position and (duration - position) < 30 * 10**7):  # 30 seconds in ticks
-            log_cyan("The session_id and last_episode_id match our last randomize call. Queue next random episode.")
+            log_cyan("The session_id and series_id match our last randomize call. Queue next random episode.")
             # Call play_random_episode logic for the same series
             from flask import current_app
             with current_app.test_request_context(json={"series_id": RANDOMIZER_STATE["series_id"]}):
                 play_random_episode()
         else:
-            log_cyan("The media that just finished playing is not one we requested. Taking no action.")
-            RANDOMIZER_STATE = {}
+            time_remaining = (duration - position) / 10_000_000
+            if (duration and position and (duration - position) < 30 * 10**7): # 30 seconds in ticks
+                log_cyan(f"The media that just finished playing is not one we requested. Taking no action.")
+            else:
+                log_cyan(f"The media that just finished playing had {time_remaining} sec remaining. Taking no action.")
+            if LOG_LEVEL > 1:
+                log_cyan(f"RANDOMIZER_STATE: {RANDOMIZER_STATE}")
+                log_cyan(f"webhook_series_id: {webhook_series_id}")
+                log_cyan(f"session_id: {session_id}")
+                log_cyan(f"duration: {duration}")
+                log_cyan(f"position: {position}")
+                log_cyan(f"time_remaining: {time_remaining}")
+            #RANDOMIZER_STATE = {}
     return jsonify({"status": "ok"})
+
 
 def update_library_ids():
     """Fetch library IDs from Jellyfin and update the global libraries list."""
@@ -483,7 +541,7 @@ def update_library_ids():
         if match:
             lib["library_id"] = match["Id"]
         else:
-            log_cyan(f"WARNING: Could not find Jellyfin library for '{lib['name']}'. Please check spelling.")
+            log_yellow(f"WARNING: Could not find Jellyfin library for '{lib['name']}'. Please check spelling.")
             lib["library_id"] = None
     # Remove libraries with no ID
     to_remove = [lib for lib in libraries if not lib["library_id"]]
@@ -491,7 +549,8 @@ def update_library_ids():
         libraries.remove(lib)
 
 def rebuild_yaml(library):
-    log_cyan(f'Rebuilding YAML for library: {library}')
+    log_yellow(f"{delimiter}")
+    log_yellow(f'Rebuilding YAML for library: {library}')
     try:
         update_library_ids()
         user_id = get_user_id()
@@ -529,28 +588,29 @@ def rebuild_yaml(library):
             local_path = os.path.join(local_yaml_dir, filename)
             with open(local_path, "w", encoding="utf-8") as f:
                 f.write(yaml_str)
-            log_cyan(f"Generated {filename} in {local_yaml_dir}")
+            log_yellow(f"Generated {filename} in {local_yaml_dir}")
             try:
                 dest_path = os.path.join(OUTPUT_DIR, filename)
                 shutil.copyfile(local_path, dest_path)
-                log_cyan(f"Copied {filename} to {dest_path}")
+                log_yellow(f"Copied {filename} to {dest_path}")
             except Exception as e:
-                log_cyan(f"Failed to copy {filename} to {OUTPUT_DIR}: {e}")
+                log_red(f"Failed to copy {filename} to {OUTPUT_DIR}: {e}")
 
         if library == 'all':
             for lib in libraries:
                 process_lib(lib)
-            log_cyan("All library YAMLs generated in 'GeneratedLovelaceYamls' and copied! 😘")
+            log_yellow("All library YAMLs generated in 'GeneratedLovelaceYamls' and copied!")
         else:
             norm = normalize_name(library)
             match = next((lib for lib in libraries if normalize_name(lib["name"]) == norm), None)
             if not match:
-                log_cyan(f"  No config found for library '{library}'. Skipping YAML rebuild.")
+                log_yellow(f"  No config found for library '{library}'. Skipping YAML rebuild.")
                 return
             process_lib(match)
     except Exception as e:
-        log_cyan(f"  Error rebuilding YAML for {library}: {e}")
+        log_yellow(f"  Error rebuilding YAML for {library}: {e}")
 
+from ruamel.yaml import YAML
 import json
 
 def get_show_name_by_series_id(series_id):
@@ -562,17 +622,17 @@ def get_show_name_by_series_id(series_id):
     }
     resp = requests.get(url, params=params, verify=False)
     if resp.status_code != 200:
-        log_cyan(f"Could not fetch series {series_id}: {resp.status_code} {resp.text}")
+        log_red(f"Could not fetch series {series_id}: {resp.status_code} {resp.text}")
         return None
     try:
         items = resp.json().get("Items", [])
         if items and "Name" in items[0]:
             return items[0]["Name"]
         else:
-            log_cyan(f"No series found for ID {series_id}. Response: {resp.text}")
+            log_red(f"No series found for ID {series_id}. Response: {resp.text}")
             return None
     except Exception as e:
-        log_cyan(f"Error decoding JSON for series {series_id}: {e}")
+        log_red(f"Error decoding JSON for series {series_id}: {e}")
         return None
 
 def normalize_name(name):
@@ -580,27 +640,34 @@ def normalize_name(name):
 
 def get_cache_path(library):
     safe_name = library.lower().replace(" ", "_")
-    return os.path.join(os.getcwd(), f'episode_cache_{safe_name}.json')
+    return os.path.join(os.getcwd(), f'episode_cache_{safe_name}.yaml')
 
 def save_cache(library, cache):
     path = get_cache_path(library)
-    with open(path, 'w') as f:
-        json.dump(cache, f)
-    log_cyan(f"Saved cache for {library} to {path}")
+    yaml_ruamel = YAML()
+    yaml_ruamel.default_flow_style = False
+    with open(path, 'w', encoding='utf-8') as f:
+        yaml_ruamel.dump(cache, f)
+    log_yellow(f"Saved cache for {library} to {path}")
 
 def load_cache(library):
     path = get_cache_path(library)
     if not os.path.exists(path):
-        log_cyan(f"No cache file found for {library} at {path}, returning empty cache.")
-        return {}
-    with open(path, 'r') as f:
-        cache = json.load(f)
-    log_cyan(f"Loaded cache for {library} from {path}")
-    return cache
+        log_red(f"No cache file found for {library} at {path}, returning empty cache.")
+        return []
+    yaml_ruamel = YAML()
+    with open(path, 'r', encoding='utf-8') as f:
+        cache = yaml_ruamel.load(f)
+    log_yellow(f"Loaded cache for {library} from {path}")
+    return cache or []
 
 def rebuild_cache(library):
-    log_cyan(f"Rebuilding episode cache for library: {library}")
+    log_yellow(f"{delimiter}")
+    log_yellow(f"Rebuilding episode cache for library: {library}")
     try:
+        # Auto-discover correct Jellyfin user_id
+        user_id = get_user_id()
+        headers = {"X-Emby-Token": JELLYFIN_API_KEY}
         # Map library name to Jellyfin item types
         item_type_map = {
             "2-TV": "Series",
@@ -613,52 +680,65 @@ def rebuild_cache(library):
         elif normalized_library in ["tvkids","1tvkids"]:
             jellyfin_lib_name = "1-TV Kids"
         else:
-            log_cyan(f"Unsupported library for cache: {library}")
+            log_red(f"Unsupported library for cache: {library}")
             return
-        # Find the library ID from your libraries config
-        user_id = get_user_id()
-        headers = {"X-Emby-Token": JELLYFIN_API_KEY}
-        url = f"{JELLYFIN_URL}/Users/{user_id}/Views"
-        resp = requests.get(url, headers=headers, verify=False)
-        resp.raise_for_status()
-        views = resp.json().get("Items", [])
+        # Dynamically fetch library_id from Jellyfin
+        views_url = f"{JELLYFIN_URL}/Users/{user_id}/Views"
+        views_resp = requests.get(views_url, headers=headers, verify=False)
+        if views_resp.status_code != 200:
+            log_red(f"Failed to fetch library views for user {user_id}: {views_resp.status_code} {views_resp.text}")
+            return
+        views = views_resp.json().get("Items", [])
         lib_id = None
         for view in views:
             if normalize_name(view["Name"]) == normalize_name(jellyfin_lib_name):
                 lib_id = view["Id"]
                 break
         if not lib_id:
-            log_cyan(f"Could not find Jellyfin library ID for {library}")
+            log_red(f"Could not find Jellyfin library ID for {library} (looked for {jellyfin_lib_name})")
             return
         # Fetch all series in this library
-        url = f"{JELLYFIN_URL}/Users/{user_id}/Items"
-        params = {
+        url_series = f"{JELLYFIN_URL}/Users/{user_id}/Items"
+        params_series = {
             "IncludeItemTypes": "Series",
             "Recursive": "true",
-            "Fields": "PrimaryImageAspectRatio,Genres",
             "ParentId": lib_id
         }
-        resp = requests.get(url, headers=headers, params=params, verify=False)
-        resp.raise_for_status()
-        series_list = resp.json().get("Items", [])
-        cache = {}
-        for s in series_list:
-            series_id = s["Id"]
-            # Fetch all episodes for this series
-            ep_url = f"{JELLYFIN_URL}/Shows/{series_id}/Episodes"
-            ep_params = {"UserId": user_id, "Fields": "Id"}
-            ep_resp = requests.get(ep_url, headers=headers, params=ep_params, verify=False)
-            if ep_resp.status_code != 200:
-                log_cyan(f"Failed to fetch episodes for series {series_id}")
-                continue
-            episodes = ep_resp.json().get("Items", [])
-            episode_ids = [ep["Id"] for ep in episodes]
-            cache[series_id] = episode_ids
-            log_cyan(f"Series {series_id}: {len(episode_ids)} episodes cached.")
+        resp_series = requests.get(url_series, headers=headers, params=params_series, verify=False)
+        resp_series.raise_for_status()
+        series_list = resp_series.json().get("Items", [])
+        # Fetch all episodes in one call
+        url_episodes = f"{JELLYFIN_URL}/Users/{user_id}/Items"
+        params_episodes = {
+            "IncludeItemTypes": "Episode",
+            "Recursive": "true",
+            "ParentId": lib_id
+        }
+        resp_episodes = requests.get(url_episodes, headers=headers, params=params_episodes, verify=False)
+        resp_episodes.raise_for_status()
+        episodes_list = resp_episodes.json().get("Items", [])
+        # Group episodes by SeriesId
+        from collections import defaultdict
+        episodes_by_series = defaultdict(list)
+        for ep in episodes_list:
+            series_id = ep.get('SeriesId')
+            if series_id:
+                episodes_by_series[series_id].append(ep['Id'])
+        cache = []
+        for series in series_list:
+            series_id = series["Id"]
+            series_name = series.get("Name", "Unknown")
+            episode_ids = episodes_by_series.get(series_id, [])
+            cache.append({
+                "series_id": series_id,
+                "series_name": series_name,
+                "episode_ids": episode_ids
+            })
+            log_yellow(f"Series {series_id} ({series_name}): {len(episode_ids)} episodes cached.")
         save_cache(library, cache)
-        log_cyan(f"Cache build complete for {library}. {len(cache)} series processed.")
+        log_yellow(f"Cache build complete for {library}. {len(cache)} series processed.")
     except Exception as e:
-        log_cyan(f"Error rebuilding cache for {library}: {e}")
+        log_red(f"Error rebuilding cache for {library}: {e}")
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=8064)
@@ -673,7 +753,7 @@ if __name__ == "__main__":
         if match:
             lib["library_id"] = match["Id"]
         else:
-            log_cyan(f"WARNING: Could not find Jellyfin library for '{lib['name']}'. Please check spelling.")
+            log_red(f"WARNING: Could not find Jellyfin library for '{lib['name']}'. Please check spelling.")
             lib["library_id"] = None
 
     # Remove libraries with no ID
@@ -720,12 +800,12 @@ if __name__ == "__main__":
         local_path = os.path.join(local_yaml_dir, filename)
         with open(local_path, "w", encoding="utf-8") as f:
             f.write(yaml_str)
-        log_cyan(f"Generated {filename} in {local_yaml_dir}")
+        log_yellow(f"Generated {filename} in {local_yaml_dir}")
         # Copy to HA config share
         try:
             dest_path = os.path.join(OUTPUT_DIR, filename)
             shutil.copyfile(local_path, dest_path)
-            log_cyan(f"Copied {filename} to {dest_path}")
+            log_yellow(f"Copied {filename} to {dest_path}")
         except Exception as e:
-            log_cyan(f"Failed to copy {filename} to {OUTPUT_DIR}: {e}")
-    log_cyan("All library YAMLs generated in 'GeneratedLovelaceYamls' and copied!")
+            log_red(f"Failed to copy {filename} to {OUTPUT_DIR}: {e}")
+    log_yellow("All library YAMLs generated in 'GeneratedLovelaceYamls' and copied!")
