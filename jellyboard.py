@@ -31,11 +31,21 @@ CYAN = "\033[36m"
 GREEN = "\033[32m"
 YELLOW = "\033[33m"
 RED = "\033[31m"
+GREEN_CHECKMARK = "\033[32m✅\033[0m"
+RED_X = "\033[31m❌\033[0m"
+VERBOSE_COLOR_SCHEME = "\033[30;43m"
 RESET = "\033[0m"
-delimiter = "----------------------------------------------------------"
+#Just a big ass underline
+delimiter = "__________________________________________________________________________________________"
+
 def log_cyan(msg):
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    print(f"{CYAN}[{now}] {msg}{RESET}")
+    new_msg = msg
+    if "Started" in new_msg:
+        new_msg = new_msg.replace("Started", f"{GREEN}\u25BA{CYAN} Started{CYAN}")
+    if "Stopped" in new_msg:
+        new_msg = new_msg.replace("Stopped", f"{RED}\u25A0{CYAN} Stopped{CYAN}")
+    print(f"{CYAN}[{now}] {new_msg}{RESET}")
 
 def log_green(msg):
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -48,6 +58,24 @@ def log_yellow(msg):
 def log_red(msg):
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print(f"{RED}[{now}] {msg}{RESET}")
+
+def log_verbose_msg(msg):
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"{VERBOSE_COLOR_SCHEME}[{now}] {msg}{RESET}")
+
+def discover_session_id():
+    headers = {"X-Emby-Token": JELLYFIN_API_KEY}
+    sessions_url = f"{JELLYFIN_URL}/Sessions"
+    sessions_resp = requests.get(sessions_url, headers=headers, verify=False)
+    sessions_resp.raise_for_status()
+    sessions = sessions_resp.json()
+    android_tv_session = next((s for s in sessions if s.get("Client") == "Android TV"), None)
+    if not android_tv_session:
+        log_red("No active Android TV session found.")
+        return {'error': 'No active Android TV session found'}
+    session_id = android_tv_session.get("Id")
+    log_green(f"Android TV session id: {session_id}")
+    return session_id
 
 # Make libraries and item_type_map available globally
 libraries = [
@@ -103,7 +131,7 @@ def send_toast(toast_url, headers, toast_data):
         toast_resp = requests.post(toast_url, headers=headers, json=toast_data, verify=False)
         toast_resp.raise_for_status()
         if LOG_LEVEL > 1:
-            log_green(f"Toast sent: '{toast_data['header']}: {toast_data['text']}'")
+            log_verbose_msg(f"Toast sent: '{toast_data['header']}: {toast_data['text']}'")
     except Exception as e:
         log_red(f"Toast failed: {e}")
 
@@ -260,6 +288,7 @@ def generate_lovelace_yaml(tv_shows, library_title="2-TV Shows", library_path="t
     }
     # Use ruamel.yaml for correct Home Assistant/Lovelace indentation
     yaml_ruamel = YAML()
+    yaml_ruamel.preserve_quotes = True  # Preserve quotes on scalars
     yaml_ruamel.default_flow_style = False
     yaml_ruamel.indent(mapping=2, sequence=4, offset=2)
     stream = StringIO()
@@ -312,7 +341,7 @@ def play_movie():
     yaml_ruamel = YAML()
     # Defensive: extract item_id from JSON or query param
     if LOG_LEVEL > 1:
-        log_green(f"play_movie request: args={dict(request.args)}, json={request.get_json(silent=True)}")
+        log_verbose_msg(f"play_movie request: args={dict(request.args)}, json={request.get_json(silent=True)}")
     item_id = request.args.get('item_id')
     if not item_id:
         data = request.get_json(silent=True) or {}
@@ -362,12 +391,12 @@ def play_movie():
         "ItemIds": item_id
     }
     if LOG_LEVEL > 1:
-        log_green(f"Sending play command as query params: {play_params} to {play_url}")
+        log_verbose_msg(f"Sending play command as query params: {play_params} to {play_url}")
     play_resp = requests.post(play_url, headers=headers, params=play_params, verify=False)
     if LOG_LEVEL > 1:
-        log_green(f"Jellyfin response: {play_resp.status_code}")
+        log_verbose_msg(f"Jellyfin response: {play_resp.status_code}")
     if play_resp.ok:
-        log_green(f"{delimiter}")
+        log_verbose_msg(f"{delimiter}")
         log_green(f"Played movie '{movie_name}' | Item: {item_id} | Jellyfin 200 OK.")
         return jsonify({'status': 'playing', 'item_id': item_id, 'session_id': session_id})
     else:
@@ -381,7 +410,7 @@ def play_random_episode():
     yaml_ruamel = YAML()
     # Defensive: extract series_id from JSON or query param
     if LOG_LEVEL > 1:
-        log_green(f"play_random_episode request: args={dict(request.args)}, json={request.get_json(silent=True)}")
+        log_verbose_msg(f"play_random_episode request: args={dict(request.args)}, json={request.get_json(silent=True)}")
     series_id = request.args.get('series_id')
     if not series_id:
         data = request.get_json(silent=True) or {}
@@ -424,8 +453,8 @@ def play_random_episode():
     show_name = series_entry.get('series_name', 'Unknown')
     episode_id = random.choice(episode_ids)
     if LOG_LEVEL > 1:
-        log_green(f"Selected random episode {episode_id} from series {series_id} ({show_name}) using cache file {cache_file_used}")
-
+        log_verbose_msg(f"Selected random episode {episode_id} from series {series_id} ({show_name}) using cache file {cache_file_used}")
+        log_verbose_msg(f"We're playing on session {ANDROID_TV_SESSION_ID}")
     def update_session_id_in_config(new_session_id):
         config_data['android_tv_session_id'] = new_session_id
         with open(config_path, 'w', encoding='utf-8') as f:
@@ -453,6 +482,9 @@ def play_random_episode():
         "session_id": session_id,
         "series_id": series_id
     }
+    if LOG_LEVEL > 1:
+        log_verbose_msg(f"RANDOMIZER_STATE: {RANDOMIZER_STATE}")
+
     # Send play command as query parameters
     play_url = f"{JELLYFIN_URL}/Sessions/{session_id}/Playing"
     play_params = {
@@ -460,12 +492,13 @@ def play_random_episode():
         "ItemIds": episode_id
     }
     if LOG_LEVEL > 1:
-        log_green(f"Sending play command as query params: {play_params} to {play_url}")
+        log_verbose_msg(f"Sending play command as query params: {play_params} to {play_url}")
     play_resp = requests.post(play_url, headers=headers, params=play_params, verify=False)
     if LOG_LEVEL > 1:
-        log_green(f"Jellyfin response: {play_resp.status_code}")
+        log_verbose_msg(f"Jellyfin response code: {play_resp.status_code}")
+        log_verbose_msg(f"Jellyfin response headers: {dict(play_resp.headers)}")
+        log_verbose_msg(f"Jellyfin response text: {play_resp.text}")
     if play_resp.ok:
-        log_green(f"{delimiter}")
         log_green(f"Played '{show_name}' | Series: {series_id} | Episode: {episode_id} | Jellyfin 200 OK.")
         return jsonify({'status': 'playing', 'episode_id': episode_id, 'session_id': session_id})
     # Fallback: try to rediscover session if play failed
@@ -507,7 +540,7 @@ def play_random_episode():
 @app.route('/jf_webhook', methods=['POST'])
 def jf_webhook():
     if LOG_LEVEL > 1:
-        log_cyan(f"Webhook received from {request.remote_addr} with Content-Type: {request.content_type}")
+        log_verbose_msg(f"Webhook received from {request.remote_addr} with Content-Type: {request.content_type}")
     try:
         data = request.get_json(force=True)
     except Exception as e:
@@ -517,7 +550,7 @@ def jf_webhook():
         try:
             raw = request.data.decode('utf-8', errors='replace')
             if LOG_LEVEL > 1:
-                log_cyan(f"Raw webhook body: {raw}")
+                log_verbose_msg(f"Raw webhook body: {raw}")
         except Exception as e:
             log_red(f"Could not decode raw body: {e}")
         return jsonify({"error": "Unsupported content type or invalid JSON"}), 415
@@ -570,14 +603,17 @@ def jf_webhook():
     # Only act if playback stopped on Android TV and it finished naturally, and state matches
     if (event in ["PlaybackStopped", "PlaybackStop"]) and (client == "Android TV"):
         if LOG_LEVEL > 1:
-            log_cyan("Since client is Android TV, checking to see if we were randomizing")
+            log_verbose_msg("Webhook reported client is Android TV, checking to see if we were randomizing")
         # Ticks: some webhooks use PlaybackPositionTicks, others PositionTicks
         # Use series_id from webhook (flat or nested)
         webhook_series_id = data.get("SeriesId") or (data.get("Item", {}) or {}).get("SeriesId")
+        if LOG_LEVEL > 1:
+            log_verbose_msg(f"RANDOMIZER_STATE: {RANDOMIZER_STATE}")
+            log_verbose_msg(f"WEBHOOK INFO: session_id: {session_id} | series_id: {webhook_series_id}")
         if (RANDOMIZER_STATE.get("session_id") == session_id and
             RANDOMIZER_STATE.get("series_id") == webhook_series_id and
             duration and position and (duration - position) < 30 * 10**7):  # 30 seconds in ticks
-            log_cyan("The session_id and series_id match our last randomize call. Queue next random episode.")
+            log_cyan(f"{GREEN_CHECKMARK}{CYAN} SessionId + SeriesId match our fingerprint. Ended with < 30s. Queue next random episode.")
             # Call play_random_episode logic for the same series
             from flask import current_app
             with current_app.test_request_context(json={"series_id": RANDOMIZER_STATE["series_id"]}):
@@ -585,16 +621,16 @@ def jf_webhook():
         else:
             time_remaining = (duration - position) / 10_000_000
             if (duration and position and (duration - position) < 30 * 10**7): # 30 seconds in ticks
-                log_cyan(f"The media that just finished playing is not one we requested. Taking no action.")
+                log_cyan(f"{RED_X}{CYAN} SessionId + SeriesId do not match our fingerprint, even though it ended with < 30s. Taking no action.")
             else:
-                log_cyan(f"The media that just finished playing had {time_remaining} sec remaining. Taking no action.")
+                log_cyan(f"{RED_X}{CYAN} SessionId + SeriesId do not match our fingerprint, and it ended with {time_remaining}s. Taking no action.")
             if LOG_LEVEL > 1:
-                log_cyan(f"RANDOMIZER_STATE: {RANDOMIZER_STATE}")
-                log_cyan(f"webhook_series_id: {webhook_series_id}")
-                log_cyan(f"session_id: {session_id}")
-                log_cyan(f"duration: {duration}")
-                log_cyan(f"position: {position}")
-                log_cyan(f"time_remaining: {time_remaining}")
+                log_verbose_msg(f"RANDOMIZER_STATE: {RANDOMIZER_STATE}")
+                log_verbose_msg(f"webhook_series_id: {webhook_series_id}")
+                log_verbose_msg(f"session_id: {session_id}")
+                log_verbose_msg(f"duration: {duration}")
+                log_verbose_msg(f"position: {position}")
+                log_verbose_msg(f"time_remaining: {time_remaining}")
             #RANDOMIZER_STATE = {}
     return jsonify({"status": "ok"})
 
@@ -813,6 +849,10 @@ def rebuild_cache(library):
         log_red(f"Error rebuilding cache for {library}: {e}")
 
 if __name__ == "__main__":
+    if LOG_LEVEL > 1:
+        log_verbose_msg("Starting Jellyboard in verbose mode...")
+    else:
+        log_yellow("Starting Jellyboard...")
     app.run(host='0.0.0.0', port=8064)
     resp = requests.get(url, params=params, verify=False)
     resp.raise_for_status()
