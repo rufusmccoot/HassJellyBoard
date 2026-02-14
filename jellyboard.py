@@ -63,19 +63,48 @@ def log_verbose_msg(msg):
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print(f"{VERBOSE_COLOR_SCHEME}[{now}] {msg}{RESET}")
 
+def wait_for_tv_session_id(timeout_s=12, interval_s=0.5):
+    log_yellow(f"Waiting up to {timeout_s}s for TV session...")
+    deadline = time.time() + timeout_s
+    last_log = 0
+
+    while time.time() < deadline:
+        sid = discover_session_id()  # your DeviceId/DeviceName matcher
+        if sid:
+            log_green(f"TV session found: {sid}")
+            return sid
+
+        # don’t spam logs every 0.5s
+        if time.time() - last_log >= 2:
+            log_yellow("...still waiting for TV session")
+            last_log = time.time()
+
+        time.sleep(interval_s)
+    log_red(f"Timed out after {timeout_s}s waiting for TV session")
+    return None
+
+
 def discover_session_id():
     headers = {"X-Emby-Token": JELLYFIN_API_KEY}
-    sessions_url = f"{JELLYFIN_URL}/Sessions"
-    sessions_resp = requests.get(sessions_url, headers=headers, verify=False)
-    sessions_resp.raise_for_status()
-    sessions = sessions_resp.json()
-    android_tv_session = next((s for s in sessions if s.get("Client") == "Android TV"), None)
-    if not android_tv_session:
-        log_red("No active Android TV session found.")
-        return {'error': 'No active Android TV session found'}
-    session_id = android_tv_session.get("Id")
-    log_green(f"Android TV session id: {session_id}")
-    return session_id
+    resp = requests.get(f"{JELLYFIN_URL}/Sessions", headers=headers, verify=False)
+    resp.raise_for_status()
+    sessions = resp.json()
+
+    target_device_id = (config.get("android_tv_device_id") or "").strip()
+    if target_device_id:
+        log_yellow(f"Attempt session discovery by DeviceId: {target_device_id}")
+        s = next((x for x in sessions if x.get("DeviceId") == target_device_id), None)
+        if s:
+            log_green(f"SessionId discovered via DeviceId: {s['Id']}")
+            return s["Id"]
+    # fallback
+    log_yellow(f"Session not found by DeviceId, attempting discovery via DeviceName \"living room tv\"")
+    s = next((x for x in sessions if (x.get("DeviceName") or "").strip().lower() == "living room tv"), None)
+    if not s:
+        log_red("No active Living Room TV session found.")
+        return None
+    log_green(f"SessionId discovered via DeviceName: {s['Id']}")
+    return s["Id"]
 
 # Make libraries and item_type_map available globally
 libraries = [
@@ -421,8 +450,9 @@ def play_random_episode():
     # Load config each time to get updated session id
     with open(config_path, 'r', encoding='utf-8') as f:
         config_data = yaml_ruamel.load(f)
-    ADMIN_USER_ID = config_data.get('admin_user_id', 'admin')
-    ANDROID_TV_SESSION_ID = config_data.get('android_tv_session_id', 'ab2f036321e914934450c05ea24fc36b')
+    global config
+    config = config_data
+
     # Find which cache file contains the requested series_id
     cache_dir = os.getcwd()
     cache_files = [f for f in os.listdir(cache_dir) if f.startswith('episode_cache_') and f.endswith('.yaml')]
@@ -452,18 +482,13 @@ def play_random_episode():
         return jsonify({'error': 'No episodes found in cache'}), 404
     show_name = series_entry.get('series_name', 'Unknown')
     episode_id = random.choice(episode_ids)
-    if LOG_LEVEL > 1:
-        log_verbose_msg(f"Selected random episode {episode_id} from series {series_id} ({show_name}) using cache file {cache_file_used}")
-        log_verbose_msg(f"We're playing on session {ANDROID_TV_SESSION_ID}")
-    def update_session_id_in_config(new_session_id):
-        config_data['android_tv_session_id'] = new_session_id
-        with open(config_path, 'w', encoding='utf-8') as f:
-            yaml_ruamel.dump(config_data, f)
-        log_green(f"Updated android_tv_session_id in config.yaml to {new_session_id}")
 
     # At this point, cache, series_entry, episode_ids, show_name, episode_id are all set from the correct cache file
-    # Step 2: Use session id from config, fallback to search if needed
-    session_id = ANDROID_TV_SESSION_ID
+    # Step 2: Use discover session id
+    session_id = wait_for_tv_session_id(timeout_s=12, interval_s=0.5)
+    if not session_id:
+        return jsonify({'error': 'TV Jellyfin session not active yet'}), 503
+
     headers = {"X-Emby-Token": JELLYFIN_API_KEY}
 
     # Display toast alerting user to what we are playing
@@ -486,6 +511,7 @@ def play_random_episode():
         log_verbose_msg(f"RANDOMIZER_STATE: {RANDOMIZER_STATE}")
 
     # Send play command as query parameters
+    log_yellow(f"Play attempt 1 using session {session_id}")
     play_url = f"{JELLYFIN_URL}/Sessions/{session_id}/Playing"
     play_params = {
         "playCommand": "PlayNow",
@@ -501,41 +527,18 @@ def play_random_episode():
     if play_resp.ok:
         log_green(f"Played '{show_name}' | Series: {series_id} | Episode: {episode_id} | Jellyfin 200 OK.")
         return jsonify({'status': 'playing', 'episode_id': episode_id, 'session_id': session_id})
-    # Fallback: try to rediscover session if play failed
-    log_red(f"Play command failed, attempting to rediscover session.")
-    for retry in range(2):
-        try:
-            sessions_url = f"{JELLYFIN_URL}/Sessions"
-            sessions_resp = requests.get(sessions_url, headers=headers, verify=False)
-            sessions_resp.raise_for_status()
-            sessions = sessions_resp.json()
-            android_tv_session = next((s for s in sessions if s.get("Client") == "Android TV"), None)
-            if not android_tv_session:
-                log_red("No active Android TV session found. Will retry in 5s..." if retry == 0 else "Giving up after second try.")
-                if retry == 0:
-                    time.sleep(5)
-                    continue
-                else:
-                    return jsonify({'error': 'No active Android TV session found'}), 404
-            session_id = android_tv_session.get("Id")
-            log_green(f"Recovered Android TV session id: {session_id}")
-            update_session_id_in_config(session_id)
-            RANDOMIZER_STATE["session_id"] = session_id
-            # Retry play command
-            play_url = f"{JELLYFIN_URL}/Sessions/{session_id}/Playing"
-            play_resp = requests.post(play_url, headers=headers, params=play_params, verify=False)
-            log_green(f"Jellyfin response (retry): {play_resp.status_code}")
-            if play_resp.ok:
-                return jsonify({'status': 'playing', 'episode_id': episode_id, 'session_id': session_id})
-            else:
-                log_green(f"Play command error (retry): {play_resp.text[:200]}")
-                return jsonify({'error': 'Failed to trigger playback on Jellyfin (retry)', 'details': play_resp.text}), 500
-        except Exception as e:
-            log_red(f"Error rediscovering session or retrying play: {e}")
-            if retry == 0:
-                time.sleep(5)
-                continue
-            return jsonify({'error': str(e)}), 500
+    log_red(f"Play attempt 1 failed: {play_resp.status_code} {play_resp.text[:200]}")
+    session_id2 = wait_for_tv_session_id(timeout_s=6, interval_s=0.5)
+    if not session_id2:
+        return jsonify({'error': 'TV session not available'}), 503
+    RANDOMIZER_STATE["session_id"] = session_id2
+    log_yellow(f"Play attempt 2 using session {session_id2}")
+    play_url = f"{JELLYFIN_URL}/Sessions/{session_id2}/Playing"
+    play_resp2 = requests.post(play_url, headers=headers, params=play_params, verify=False)
+    if play_resp2.ok:
+        return jsonify({'status': 'playing', 'episode_id': episode_id, 'session_id': session_id2})
+    log_red(f"Play attempt 2 failed: {play_resp2.status_code} {play_resp2.text[:200]}")
+    return jsonify({'error': 'Failed to trigger playback on Jellyfin', 'details': play_resp2.text}), 500
 
 @app.route('/jf_webhook', methods=['POST'])
 def jf_webhook():

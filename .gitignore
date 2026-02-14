@@ -1,3 +1,5 @@
+jellyboard - Copy.py
+
 # Allow the GeneratedLovelaceYamls directory but keep it empty in git
 !GeneratedLovelaceYamls/
 GeneratedLovelaceYamls/*
