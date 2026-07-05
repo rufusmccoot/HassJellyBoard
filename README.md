@@ -18,6 +18,3 @@ A smooth, Python-powered bridge between Jellyfin and Home Assistant, designed to
    pip install -r requirements.txt
    ```
 3. Run the main script (coming soon!)
-
----
-Crafted with love (and a wink) by your AI coding partner. 😘
