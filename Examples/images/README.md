@@ -1,7 +1,7 @@
 # Images
 These are optional images that can be displayed as the tabs on the TV dashboard.
 
-<img src="Examples/images/screenshot.png" width="700" alt="HassJellyBoard View Icons">
+<img src="screenshot.png" width="700" alt="HassJellyBoard View Icons">
 
 They are referenced in the sample yaml files as `icon: steve:media-icon-tvshowskids`
 
