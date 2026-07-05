@@ -1,9 +1,9 @@
 # HassJellyBoard
-What if you had a tablet next to your TV and it listed all your Jellyfin content?
-
-What if the Lovelace rebuilt automatically when your Jellyfin library changed?
+What if you had a tablet next to your TV running Home Assistant and it listed all your Jellyfin content?
 
 What if your kid could walk up, tap Bluey, and get random episodes without needing your assistance?
+
+What if the Lovelace UI rebuilt automatically when your Jellyfin library changed?
 
 <img src="Examples/Lovelace/lovelace_config_tvshowskids.PNG" width="700" alt="HassJellyBoard Dashboard">
 
