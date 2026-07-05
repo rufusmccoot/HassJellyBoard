@@ -96,9 +96,16 @@ See:
 Examples/HomeAssistant Rest Commands.txt
 ```
 
-I simply call these endpoints from Home Assistant automations every **4 hours**.
+We can call these endpoints with Home Assitant automations to rebuild the cache at desired intervals.
 
-There's also a manual "Refresh Cache" button in my dashboard, although I rarely need it.
+We can add a UI button to manually force cache rebuilds.
+
+See:
+
+```
+Examples/Lovelace/lovelace_config_manage.PNG + yaml
+```
+
 
 ---
 
