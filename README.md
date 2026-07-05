@@ -132,6 +132,9 @@ Examples/HomeAssistant Rest Commands.txt
 
 ```
 Examples/
+├── Lovelace
+    ├── Some sample Lovelace yamls
+    └── Screenshots of the same
 ├── HomeAssistant Play TV Script.txt
 └── HomeAssistant Rest Commands.txt
 ```
