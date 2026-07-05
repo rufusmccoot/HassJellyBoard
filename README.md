@@ -1,8 +1,14 @@
 # HassJellyBoard
+What if you had a tablet next to your TV and it listed all your Jellyfin content?
 
-HassJellyBoard is a lightweight Python web server that connects **Home Assistant** and **Jellyfin** to create a fast, family-friendly TV interface with support for random episodes, automatic Home Assistant dashboard generation, and playback automation.
+What if the Lovelace rebuilt automatically when your Jellyfin library changed?
+
+What if your kid could walk up, tap Bluey, and get random episodes without needing your assistance?
 
 <img src="Examples/Lovelace/lovelace_config_tvshowskids.PNG" width="700" alt="HassJellyBoard Dashboard">
+
+
+**HassJellyBoard** is a lightweight Python web server that connects **Home Assistant** and **Jellyfin** to create a fast, family-friendly TV interface with support for random episodes, automatic Home Assistant dashboard generation, and playback automation.
 
 ---
 
