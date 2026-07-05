@@ -138,6 +138,7 @@ Examples/HomeAssistant Rest Commands.txt
 - Home Assistant
 - Home Assitant long-lived access token
 - Home Assistant SMB share accessible from the Python server (for Lovelace YAML generation)
+- Home Assistant custom:button-card
 
 ---
 
