@@ -1,0 +1,807 @@
+title: 1-TV Kids
+path: tvshowskids
+type: sidebar
+icon: steve:media-icon-tvshowskids
+cards:
+  - type: vertical-stack
+    cards:
+      - type: custom:button-card
+        color_type: label-card
+        template: section-header
+        name: 1-TV Kids
+      - type: grid
+        square: true
+        columns: 5
+        cards:
+          - show_name: true
+            show_icon: true
+            type: button
+            icon: mdi:remote-tv
+            name: TV Remote
+            tap_action:
+              action: navigate
+              navigation_path: /dashboard-media/remote
+          - type: custom:button-card
+            variables:
+              this_media: "Aaahh!!! Real Monsters"
+              media_id: 01aa2f003d063e3b24887fafad8f5c35
+              media_type: tvshows
+            name: '[[[ return variables.this_media; ]]]'
+            confirmation:
+              text: >-
+                [[[ return "Do you want to play \x22" + variables.this_media + "\x22?";
+                ]]]
+            aspect_ratio: 1/1.5
+            size: 150
+            styles:
+            card:
+              - height: 100px
+              - --mdc-ripple-color: blue
+              - --mdc-ripple-press-opacity: '0.5'
+            entity_picture: 
+              https://jelly.spaghettifiesta.com/Items/01aa2f003d063e3b24887fafad8f5c35/Images/Primary?api_key=987bbb6b2f064f7d8149f25fe67b9ac3
+            show_entity_picture: true
+            show_name: true
+            show_icon: false
+            tap_action:
+              action: call-service
+              service: script.jellyfin_play_tv_based_libraries
+              service_data:
+                media_id: '[[[ return variables.media_id; ]]]'
+                media_type: '[[[ return variables.media_type; ]]]'
+          - type: custom:button-card
+            variables:
+              this_media: "Adventure Time"
+              media_id: c5605527028e60bea9001cb9291e078f
+              media_type: tvshows
+            name: '[[[ return variables.this_media; ]]]'
+            confirmation:
+              text: >-
+                [[[ return "Do you want to play \x22" + variables.this_media + "\x22?";
+                ]]]
+            aspect_ratio: 1/1.5
+            size: 150
+            styles:
+            card:
+              - height: 100px
+              - --mdc-ripple-color: blue
+              - --mdc-ripple-press-opacity: '0.5'
+            entity_picture: 
+              https://jelly.spaghettifiesta.com/Items/c5605527028e60bea9001cb9291e078f/Images/Primary?api_key=987bbb6b2f064f7d8149f25fe67b9ac3
+            show_entity_picture: true
+            show_name: true
+            show_icon: false
+            tap_action:
+              action: call-service
+              service: script.jellyfin_play_tv_based_libraries
+              service_data:
+                media_id: '[[[ return variables.media_id; ]]]'
+                media_type: '[[[ return variables.media_type; ]]]'
+          - type: custom:button-card
+            variables:
+              this_media: "Animaniacs"
+              media_id: b3afeb87ccbd1616bc7894a997ce9f70
+              media_type: tvshows
+            name: '[[[ return variables.this_media; ]]]'
+            confirmation:
+              text: >-
+                [[[ return "Do you want to play \x22" + variables.this_media + "\x22?";
+                ]]]
+            aspect_ratio: 1/1.5
+            size: 150
+            styles:
+            card:
+              - height: 100px
+              - --mdc-ripple-color: blue
+              - --mdc-ripple-press-opacity: '0.5'
+            entity_picture: 
+              https://jelly.spaghettifiesta.com/Items/b3afeb87ccbd1616bc7894a997ce9f70/Images/Primary?api_key=987bbb6b2f064f7d8149f25fe67b9ac3
+            show_entity_picture: true
+            show_name: true
+            show_icon: false
+            tap_action:
+              action: call-service
+              service: script.jellyfin_play_tv_based_libraries
+              service_data:
+                media_id: '[[[ return variables.media_id; ]]]'
+                media_type: '[[[ return variables.media_type; ]]]'
+          - type: custom:button-card
+            variables:
+              this_media: "Beakman's World"
+              media_id: 5d56441e72e211a20aea09275503adc5
+              media_type: tvshows
+            name: '[[[ return variables.this_media; ]]]'
+            confirmation:
+              text: >-
+                [[[ return "Do you want to play \x22" + variables.this_media + "\x22?";
+                ]]]
+            aspect_ratio: 1/1.5
+            size: 150
+            styles:
+            card:
+              - height: 100px
+              - --mdc-ripple-color: blue
+              - --mdc-ripple-press-opacity: '0.5'
+            entity_picture: 
+              https://jelly.spaghettifiesta.com/Items/5d56441e72e211a20aea09275503adc5/Images/Primary?api_key=987bbb6b2f064f7d8149f25fe67b9ac3
+            show_entity_picture: true
+            show_name: true
+            show_icon: false
+            tap_action:
+              action: call-service
+              service: script.jellyfin_play_tv_based_libraries
+              service_data:
+                media_id: '[[[ return variables.media_id; ]]]'
+                media_type: '[[[ return variables.media_type; ]]]'
+          - type: custom:button-card
+            variables:
+              this_media: "Bill Nye the Science Guy"
+              media_id: cd7a00989abca5cd8a183952228b9226
+              media_type: tvshows
+            name: '[[[ return variables.this_media; ]]]'
+            confirmation:
+              text: >-
+                [[[ return "Do you want to play \x22" + variables.this_media + "\x22?";
+                ]]]
+            aspect_ratio: 1/1.5
+            size: 150
+            styles:
+            card:
+              - height: 100px
+              - --mdc-ripple-color: blue
+              - --mdc-ripple-press-opacity: '0.5'
+            entity_picture: 
+              https://jelly.spaghettifiesta.com/Items/cd7a00989abca5cd8a183952228b9226/Images/Primary?api_key=987bbb6b2f064f7d8149f25fe67b9ac3
+            show_entity_picture: true
+            show_name: true
+            show_icon: false
+            tap_action:
+              action: call-service
+              service: script.jellyfin_play_tv_based_libraries
+              service_data:
+                media_id: '[[[ return variables.media_id; ]]]'
+                media_type: '[[[ return variables.media_type; ]]]'
+          - type: custom:button-card
+            variables:
+              this_media: "Blaze and the Monster Machines"
+              media_id: f764097672adbc2be68d489457e50b17
+              media_type: tvshows
+            name: '[[[ return variables.this_media; ]]]'
+            confirmation:
+              text: >-
+                [[[ return "Do you want to play \x22" + variables.this_media + "\x22?";
+                ]]]
+            aspect_ratio: 1/1.5
+            size: 150
+            styles:
+            card:
+              - height: 100px
+              - --mdc-ripple-color: blue
+              - --mdc-ripple-press-opacity: '0.5'
+            entity_picture: 
+              https://jelly.spaghettifiesta.com/Items/f764097672adbc2be68d489457e50b17/Images/Primary?api_key=987bbb6b2f064f7d8149f25fe67b9ac3
+            show_entity_picture: true
+            show_name: true
+            show_icon: false
+            tap_action:
+              action: call-service
+              service: script.jellyfin_play_tv_based_libraries
+              service_data:
+                media_id: '[[[ return variables.media_id; ]]]'
+                media_type: '[[[ return variables.media_type; ]]]'
+          - type: custom:button-card
+            variables:
+              this_media: "Blue's Clues & You!"
+              media_id: be9d50be795c306245d177f7a6052f54
+              media_type: tvshows
+            name: '[[[ return variables.this_media; ]]]'
+            confirmation:
+              text: >-
+                [[[ return "Do you want to play \x22" + variables.this_media + "\x22?";
+                ]]]
+            aspect_ratio: 1/1.5
+            size: 150
+            styles:
+            card:
+              - height: 100px
+              - --mdc-ripple-color: blue
+              - --mdc-ripple-press-opacity: '0.5'
+            entity_picture: 
+              https://jelly.spaghettifiesta.com/Items/be9d50be795c306245d177f7a6052f54/Images/Primary?api_key=987bbb6b2f064f7d8149f25fe67b9ac3
+            show_entity_picture: true
+            show_name: true
+            show_icon: false
+            tap_action:
+              action: call-service
+              service: script.jellyfin_play_tv_based_libraries
+              service_data:
+                media_id: '[[[ return variables.media_id; ]]]'
+                media_type: '[[[ return variables.media_type; ]]]'
+          - type: custom:button-card
+            variables:
+              this_media: "Bluey"
+              media_id: 9aa6f47564a99f71599cabe6402ec01b
+              media_type: tvshows
+            name: '[[[ return variables.this_media; ]]]'
+            confirmation:
+              text: >-
+                [[[ return "Do you want to play \x22" + variables.this_media + "\x22?";
+                ]]]
+            aspect_ratio: 1/1.5
+            size: 150
+            styles:
+            card:
+              - height: 100px
+              - --mdc-ripple-color: blue
+              - --mdc-ripple-press-opacity: '0.5'
+            entity_picture: 
+              https://jelly.spaghettifiesta.com/Items/9aa6f47564a99f71599cabe6402ec01b/Images/Primary?api_key=987bbb6b2f064f7d8149f25fe67b9ac3
+            show_entity_picture: true
+            show_name: true
+            show_icon: false
+            tap_action:
+              action: call-service
+              service: script.jellyfin_play_tv_based_libraries
+              service_data:
+                media_id: '[[[ return variables.media_id; ]]]'
+                media_type: '[[[ return variables.media_type; ]]]'
+          - type: custom:button-card
+            variables:
+              this_media: "Bluey Minisodes"
+              media_id: 852606a676c85f0ec1006a7bf6f12b74
+              media_type: tvshows
+            name: '[[[ return variables.this_media; ]]]'
+            confirmation:
+              text: >-
+                [[[ return "Do you want to play \x22" + variables.this_media + "\x22?";
+                ]]]
+            aspect_ratio: 1/1.5
+            size: 150
+            styles:
+            card:
+              - height: 100px
+              - --mdc-ripple-color: blue
+              - --mdc-ripple-press-opacity: '0.5'
+            entity_picture: 
+              https://jelly.spaghettifiesta.com/Items/852606a676c85f0ec1006a7bf6f12b74/Images/Primary?api_key=987bbb6b2f064f7d8149f25fe67b9ac3
+            show_entity_picture: true
+            show_name: true
+            show_icon: false
+            tap_action:
+              action: call-service
+              service: script.jellyfin_play_tv_based_libraries
+              service_data:
+                media_id: '[[[ return variables.media_id; ]]]'
+                media_type: '[[[ return variables.media_type; ]]]'
+          - type: custom:button-card
+            variables:
+              this_media: "Human vs Hamster"
+              media_id: 394ebc07c4c6e208fbe354cbec3445f6
+              media_type: tvshows
+            name: '[[[ return variables.this_media; ]]]'
+            confirmation:
+              text: >-
+                [[[ return "Do you want to play \x22" + variables.this_media + "\x22?";
+                ]]]
+            aspect_ratio: 1/1.5
+            size: 150
+            styles:
+            card:
+              - height: 100px
+              - --mdc-ripple-color: blue
+              - --mdc-ripple-press-opacity: '0.5'
+            entity_picture: 
+              https://jelly.spaghettifiesta.com/Items/394ebc07c4c6e208fbe354cbec3445f6/Images/Primary?api_key=987bbb6b2f064f7d8149f25fe67b9ac3
+            show_entity_picture: true
+            show_name: true
+            show_icon: false
+            tap_action:
+              action: call-service
+              service: script.jellyfin_play_tv_based_libraries
+              service_data:
+                media_id: '[[[ return variables.media_id; ]]]'
+                media_type: '[[[ return variables.media_type; ]]]'
+          - type: custom:button-card
+            variables:
+              this_media: "Jurassic World Camp Cretaceous"
+              media_id: 1809efc9492d07cd02aeb5524a1ce922
+              media_type: tvshows
+            name: '[[[ return variables.this_media; ]]]'
+            confirmation:
+              text: >-
+                [[[ return "Do you want to play \x22" + variables.this_media + "\x22?";
+                ]]]
+            aspect_ratio: 1/1.5
+            size: 150
+            styles:
+            card:
+              - height: 100px
+              - --mdc-ripple-color: blue
+              - --mdc-ripple-press-opacity: '0.5'
+            entity_picture: 
+              https://jelly.spaghettifiesta.com/Items/1809efc9492d07cd02aeb5524a1ce922/Images/Primary?api_key=987bbb6b2f064f7d8149f25fe67b9ac3
+            show_entity_picture: true
+            show_name: true
+            show_icon: false
+            tap_action:
+              action: call-service
+              service: script.jellyfin_play_tv_based_libraries
+              service_data:
+                media_id: '[[[ return variables.media_id; ]]]'
+                media_type: '[[[ return variables.media_type; ]]]'
+          - type: custom:button-card
+            variables:
+              this_media: "Jurassic World: Chaos Theory"
+              media_id: 4d90e1331008e4e3e6cd47e2d4795c27
+              media_type: tvshows
+            name: '[[[ return variables.this_media; ]]]'
+            confirmation:
+              text: >-
+                [[[ return "Do you want to play \x22" + variables.this_media + "\x22?";
+                ]]]
+            aspect_ratio: 1/1.5
+            size: 150
+            styles:
+            card:
+              - height: 100px
+              - --mdc-ripple-color: blue
+              - --mdc-ripple-press-opacity: '0.5'
+            entity_picture: 
+              https://jelly.spaghettifiesta.com/Items/4d90e1331008e4e3e6cd47e2d4795c27/Images/Primary?api_key=987bbb6b2f064f7d8149f25fe67b9ac3
+            show_entity_picture: true
+            show_name: true
+            show_icon: false
+            tap_action:
+              action: call-service
+              service: script.jellyfin_play_tv_based_libraries
+              service_data:
+                media_id: '[[[ return variables.media_id; ]]]'
+                media_type: '[[[ return variables.media_type; ]]]'
+          - type: custom:button-card
+            variables:
+              this_media: "Mark Rober's Revengineers"
+              media_id: 044ead8fb3c1a52ae3d25d41487dcd02
+              media_type: tvshows
+            name: '[[[ return variables.this_media; ]]]'
+            confirmation:
+              text: >-
+                [[[ return "Do you want to play \x22" + variables.this_media + "\x22?";
+                ]]]
+            aspect_ratio: 1/1.5
+            size: 150
+            styles:
+            card:
+              - height: 100px
+              - --mdc-ripple-color: blue
+              - --mdc-ripple-press-opacity: '0.5'
+            entity_picture: 
+              https://jelly.spaghettifiesta.com/Items/044ead8fb3c1a52ae3d25d41487dcd02/Images/Primary?api_key=987bbb6b2f064f7d8149f25fe67b9ac3
+            show_entity_picture: true
+            show_name: true
+            show_icon: false
+            tap_action:
+              action: call-service
+              service: script.jellyfin_play_tv_based_libraries
+              service_data:
+                media_id: '[[[ return variables.media_id; ]]]'
+                media_type: '[[[ return variables.media_type; ]]]'
+          - type: custom:button-card
+            variables:
+              this_media: "Mecha Builders"
+              media_id: bef07dfca8b1247f463bbbb95cfe3442
+              media_type: tvshows
+            name: '[[[ return variables.this_media; ]]]'
+            confirmation:
+              text: >-
+                [[[ return "Do you want to play \x22" + variables.this_media + "\x22?";
+                ]]]
+            aspect_ratio: 1/1.5
+            size: 150
+            styles:
+            card:
+              - height: 100px
+              - --mdc-ripple-color: blue
+              - --mdc-ripple-press-opacity: '0.5'
+            entity_picture: 
+              https://jelly.spaghettifiesta.com/Items/bef07dfca8b1247f463bbbb95cfe3442/Images/Primary?api_key=987bbb6b2f064f7d8149f25fe67b9ac3
+            show_entity_picture: true
+            show_name: true
+            show_icon: false
+            tap_action:
+              action: call-service
+              service: script.jellyfin_play_tv_based_libraries
+              service_data:
+                media_id: '[[[ return variables.media_id; ]]]'
+                media_type: '[[[ return variables.media_type; ]]]'
+          - type: custom:button-card
+            variables:
+              this_media: "Muppet Babies"
+              media_id: 0fa25b6a2737d0c31ed7bcdeef896c1c
+              media_type: tvshows
+            name: '[[[ return variables.this_media; ]]]'
+            confirmation:
+              text: >-
+                [[[ return "Do you want to play \x22" + variables.this_media + "\x22?";
+                ]]]
+            aspect_ratio: 1/1.5
+            size: 150
+            styles:
+            card:
+              - height: 100px
+              - --mdc-ripple-color: blue
+              - --mdc-ripple-press-opacity: '0.5'
+            entity_picture: 
+              https://jelly.spaghettifiesta.com/Items/0fa25b6a2737d0c31ed7bcdeef896c1c/Images/Primary?api_key=987bbb6b2f064f7d8149f25fe67b9ac3
+            show_entity_picture: true
+            show_name: true
+            show_icon: false
+            tap_action:
+              action: call-service
+              service: script.jellyfin_play_tv_based_libraries
+              service_data:
+                media_id: '[[[ return variables.media_id; ]]]'
+                media_type: '[[[ return variables.media_type; ]]]'
+          - type: custom:button-card
+            variables:
+              this_media: "MythBusters"
+              media_id: e0e58e1049f3412e54747bca04653074
+              media_type: tvshows
+            name: '[[[ return variables.this_media; ]]]'
+            confirmation:
+              text: >-
+                [[[ return "Do you want to play \x22" + variables.this_media + "\x22?";
+                ]]]
+            aspect_ratio: 1/1.5
+            size: 150
+            styles:
+            card:
+              - height: 100px
+              - --mdc-ripple-color: blue
+              - --mdc-ripple-press-opacity: '0.5'
+            entity_picture: 
+              https://jelly.spaghettifiesta.com/Items/e0e58e1049f3412e54747bca04653074/Images/Primary?api_key=987bbb6b2f064f7d8149f25fe67b9ac3
+            show_entity_picture: true
+            show_name: true
+            show_icon: false
+            tap_action:
+              action: call-service
+              service: script.jellyfin_play_tv_based_libraries
+              service_data:
+                media_id: '[[[ return variables.media_id; ]]]'
+                media_type: '[[[ return variables.media_type; ]]]'
+          - type: custom:button-card
+            variables:
+              this_media: "Mythbusters Jr."
+              media_id: ed4ed6500e867f7d9f06933d5d382c60
+              media_type: tvshows
+            name: '[[[ return variables.this_media; ]]]'
+            confirmation:
+              text: >-
+                [[[ return "Do you want to play \x22" + variables.this_media + "\x22?";
+                ]]]
+            aspect_ratio: 1/1.5
+            size: 150
+            styles:
+            card:
+              - height: 100px
+              - --mdc-ripple-color: blue
+              - --mdc-ripple-press-opacity: '0.5'
+            entity_picture: 
+              https://jelly.spaghettifiesta.com/Items/ed4ed6500e867f7d9f06933d5d382c60/Images/Primary?api_key=987bbb6b2f064f7d8149f25fe67b9ac3
+            show_entity_picture: true
+            show_name: true
+            show_icon: false
+            tap_action:
+              action: call-service
+              service: script.jellyfin_play_tv_based_libraries
+              service_data:
+                media_id: '[[[ return variables.media_id; ]]]'
+                media_type: '[[[ return variables.media_type; ]]]'
+          - type: custom:button-card
+            variables:
+              this_media: "Odd Squad"
+              media_id: f49e77043217b830fc393b74e724dd8b
+              media_type: tvshows
+            name: '[[[ return variables.this_media; ]]]'
+            confirmation:
+              text: >-
+                [[[ return "Do you want to play \x22" + variables.this_media + "\x22?";
+                ]]]
+            aspect_ratio: 1/1.5
+            size: 150
+            styles:
+            card:
+              - height: 100px
+              - --mdc-ripple-color: blue
+              - --mdc-ripple-press-opacity: '0.5'
+            entity_picture: 
+              https://jelly.spaghettifiesta.com/Items/f49e77043217b830fc393b74e724dd8b/Images/Primary?api_key=987bbb6b2f064f7d8149f25fe67b9ac3
+            show_entity_picture: true
+            show_name: true
+            show_icon: false
+            tap_action:
+              action: call-service
+              service: script.jellyfin_play_tv_based_libraries
+              service_data:
+                media_id: '[[[ return variables.media_id; ]]]'
+                media_type: '[[[ return variables.media_type; ]]]'
+          - type: custom:button-card
+            variables:
+              this_media: "Outrageous Pumpkins"
+              media_id: e3cdd1ecf9b0a19a33c00a8efde802d6
+              media_type: tvshows
+            name: '[[[ return variables.this_media; ]]]'
+            confirmation:
+              text: >-
+                [[[ return "Do you want to play \x22" + variables.this_media + "\x22?";
+                ]]]
+            aspect_ratio: 1/1.5
+            size: 150
+            styles:
+            card:
+              - height: 100px
+              - --mdc-ripple-color: blue
+              - --mdc-ripple-press-opacity: '0.5'
+            entity_picture: 
+              https://jelly.spaghettifiesta.com/Items/e3cdd1ecf9b0a19a33c00a8efde802d6/Images/Primary?api_key=987bbb6b2f064f7d8149f25fe67b9ac3
+            show_entity_picture: true
+            show_name: true
+            show_icon: false
+            tap_action:
+              action: call-service
+              service: script.jellyfin_play_tv_based_libraries
+              service_data:
+                media_id: '[[[ return variables.media_id; ]]]'
+                media_type: '[[[ return variables.media_type; ]]]'
+          - type: custom:button-card
+            variables:
+              this_media: "Peppa Pig"
+              media_id: fb412ebf7b19d403ce7633a865799209
+              media_type: tvshows
+            name: '[[[ return variables.this_media; ]]]'
+            confirmation:
+              text: >-
+                [[[ return "Do you want to play \x22" + variables.this_media + "\x22?";
+                ]]]
+            aspect_ratio: 1/1.5
+            size: 150
+            styles:
+            card:
+              - height: 100px
+              - --mdc-ripple-color: blue
+              - --mdc-ripple-press-opacity: '0.5'
+            entity_picture: 
+              https://jelly.spaghettifiesta.com/Items/fb412ebf7b19d403ce7633a865799209/Images/Primary?api_key=987bbb6b2f064f7d8149f25fe67b9ac3
+            show_entity_picture: true
+            show_name: true
+            show_icon: false
+            tap_action:
+              action: call-service
+              service: script.jellyfin_play_tv_based_libraries
+              service_data:
+                media_id: '[[[ return variables.media_id; ]]]'
+                media_type: '[[[ return variables.media_type; ]]]'
+          - type: custom:button-card
+            variables:
+              this_media: "Rock the Park"
+              media_id: 078fd2591ccd2e716032bb58892566be
+              media_type: tvshows
+            name: '[[[ return variables.this_media; ]]]'
+            confirmation:
+              text: >-
+                [[[ return "Do you want to play \x22" + variables.this_media + "\x22?";
+                ]]]
+            aspect_ratio: 1/1.5
+            size: 150
+            styles:
+            card:
+              - height: 100px
+              - --mdc-ripple-color: blue
+              - --mdc-ripple-press-opacity: '0.5'
+            entity_picture: 
+              https://jelly.spaghettifiesta.com/Items/078fd2591ccd2e716032bb58892566be/Images/Primary?api_key=987bbb6b2f064f7d8149f25fe67b9ac3
+            show_entity_picture: true
+            show_name: true
+            show_icon: false
+            tap_action:
+              action: call-service
+              service: script.jellyfin_play_tv_based_libraries
+              service_data:
+                media_id: '[[[ return variables.media_id; ]]]'
+                media_type: '[[[ return variables.media_type; ]]]'
+          - type: custom:button-card
+            variables:
+              this_media: "Rosie's Rules"
+              media_id: 180e9da34e114b7bc1ff0e8cb6b98921
+              media_type: tvshows
+            name: '[[[ return variables.this_media; ]]]'
+            confirmation:
+              text: >-
+                [[[ return "Do you want to play \x22" + variables.this_media + "\x22?";
+                ]]]
+            aspect_ratio: 1/1.5
+            size: 150
+            styles:
+            card:
+              - height: 100px
+              - --mdc-ripple-color: blue
+              - --mdc-ripple-press-opacity: '0.5'
+            entity_picture: 
+              https://jelly.spaghettifiesta.com/Items/180e9da34e114b7bc1ff0e8cb6b98921/Images/Primary?api_key=987bbb6b2f064f7d8149f25fe67b9ac3
+            show_entity_picture: true
+            show_name: true
+            show_icon: false
+            tap_action:
+              action: call-service
+              service: script.jellyfin_play_tv_based_libraries
+              service_data:
+                media_id: '[[[ return variables.media_id; ]]]'
+                media_type: '[[[ return variables.media_type; ]]]'
+          - type: custom:button-card
+            variables:
+              this_media: "SpongeBob SquarePants"
+              media_id: d93c0cdcb55eadc9347dfa59bff958fd
+              media_type: tvshows
+            name: '[[[ return variables.this_media; ]]]'
+            confirmation:
+              text: >-
+                [[[ return "Do you want to play \x22" + variables.this_media + "\x22?";
+                ]]]
+            aspect_ratio: 1/1.5
+            size: 150
+            styles:
+            card:
+              - height: 100px
+              - --mdc-ripple-color: blue
+              - --mdc-ripple-press-opacity: '0.5'
+            entity_picture: 
+              https://jelly.spaghettifiesta.com/Items/d93c0cdcb55eadc9347dfa59bff958fd/Images/Primary?api_key=987bbb6b2f064f7d8149f25fe67b9ac3
+            show_entity_picture: true
+            show_name: true
+            show_icon: false
+            tap_action:
+              action: call-service
+              service: script.jellyfin_play_tv_based_libraries
+              service_data:
+                media_id: '[[[ return variables.media_id; ]]]'
+                media_type: '[[[ return variables.media_type; ]]]'
+          - type: custom:button-card
+            variables:
+              this_media: "The Care Bears"
+              media_id: 0ec9e1388499e9844a51204854ee8fc1
+              media_type: tvshows
+            name: '[[[ return variables.this_media; ]]]'
+            confirmation:
+              text: >-
+                [[[ return "Do you want to play \x22" + variables.this_media + "\x22?";
+                ]]]
+            aspect_ratio: 1/1.5
+            size: 150
+            styles:
+            card:
+              - height: 100px
+              - --mdc-ripple-color: blue
+              - --mdc-ripple-press-opacity: '0.5'
+            entity_picture: 
+              https://jelly.spaghettifiesta.com/Items/0ec9e1388499e9844a51204854ee8fc1/Images/Primary?api_key=987bbb6b2f064f7d8149f25fe67b9ac3
+            show_entity_picture: true
+            show_name: true
+            show_icon: false
+            tap_action:
+              action: call-service
+              service: script.jellyfin_play_tv_based_libraries
+              service_data:
+                media_id: '[[[ return variables.media_id; ]]]'
+                media_type: '[[[ return variables.media_type; ]]]'
+          - type: custom:button-card
+            variables:
+              this_media: "The Epic Tales of Captain Underpants"
+              media_id: 9f35f38935f8d2eea85aed11e768dc61
+              media_type: tvshows
+            name: '[[[ return variables.this_media; ]]]'
+            confirmation:
+              text: >-
+                [[[ return "Do you want to play \x22" + variables.this_media + "\x22?";
+                ]]]
+            aspect_ratio: 1/1.5
+            size: 150
+            styles:
+            card:
+              - height: 100px
+              - --mdc-ripple-color: blue
+              - --mdc-ripple-press-opacity: '0.5'
+            entity_picture: 
+              https://jelly.spaghettifiesta.com/Items/9f35f38935f8d2eea85aed11e768dc61/Images/Primary?api_key=987bbb6b2f064f7d8149f25fe67b9ac3
+            show_entity_picture: true
+            show_name: true
+            show_icon: false
+            tap_action:
+              action: call-service
+              service: script.jellyfin_play_tv_based_libraries
+              service_data:
+                media_id: '[[[ return variables.media_id; ]]]'
+                media_type: '[[[ return variables.media_type; ]]]'
+          - type: custom:button-card
+            variables:
+              this_media: "The White Lotus"
+              media_id: 84d6defd16539dd0a365dd6adfe1a0e5
+              media_type: tvshows
+            name: '[[[ return variables.this_media; ]]]'
+            confirmation:
+              text: >-
+                [[[ return "Do you want to play \x22" + variables.this_media + "\x22?";
+                ]]]
+            aspect_ratio: 1/1.5
+            size: 150
+            styles:
+            card:
+              - height: 100px
+              - --mdc-ripple-color: blue
+              - --mdc-ripple-press-opacity: '0.5'
+            entity_picture: 
+              https://jelly.spaghettifiesta.com/Items/84d6defd16539dd0a365dd6adfe1a0e5/Images/Primary?api_key=987bbb6b2f064f7d8149f25fe67b9ac3
+            show_entity_picture: true
+            show_name: true
+            show_icon: false
+            tap_action:
+              action: call-service
+              service: script.jellyfin_play_tv_based_libraries
+              service_data:
+                media_id: '[[[ return variables.media_id; ]]]'
+                media_type: '[[[ return variables.media_type; ]]]'
+          - type: custom:button-card
+            variables:
+              this_media: "Wild Kratts"
+              media_id: 7246763fc5bdc03de1d60f8aab7d3c9d
+              media_type: tvshows
+            name: '[[[ return variables.this_media; ]]]'
+            confirmation:
+              text: >-
+                [[[ return "Do you want to play \x22" + variables.this_media + "\x22?";
+                ]]]
+            aspect_ratio: 1/1.5
+            size: 150
+            styles:
+            card:
+              - height: 100px
+              - --mdc-ripple-color: blue
+              - --mdc-ripple-press-opacity: '0.5'
+            entity_picture: 
+              https://jelly.spaghettifiesta.com/Items/7246763fc5bdc03de1d60f8aab7d3c9d/Images/Primary?api_key=987bbb6b2f064f7d8149f25fe67b9ac3
+            show_entity_picture: true
+            show_name: true
+            show_icon: false
+            tap_action:
+              action: call-service
+              service: script.jellyfin_play_tv_based_libraries
+              service_data:
+                media_id: '[[[ return variables.media_id; ]]]'
+                media_type: '[[[ return variables.media_type; ]]]'
+          - type: custom:button-card
+            variables:
+              this_media: "Work It Out Wombats!"
+              media_id: a811508ad4bee83f03306af37bf3bf76
+              media_type: tvshows
+            name: '[[[ return variables.this_media; ]]]'
+            confirmation:
+              text: >-
+                [[[ return "Do you want to play \x22" + variables.this_media + "\x22?";
+                ]]]
+            aspect_ratio: 1/1.5
+            size: 150
+            styles:
+            card:
+              - height: 100px
+              - --mdc-ripple-color: blue
+              - --mdc-ripple-press-opacity: '0.5'
+            entity_picture: 
+              https://jelly.spaghettifiesta.com/Items/a811508ad4bee83f03306af37bf3bf76/Images/Primary?api_key=987bbb6b2f064f7d8149f25fe67b9ac3
+            show_entity_picture: true
+            show_name: true
+            show_icon: false
+            tap_action:
+              action: call-service
+              service: script.jellyfin_play_tv_based_libraries
+              service_data:
+                media_id: '[[[ return variables.media_id; ]]]'
+                media_type: '[[[ return variables.media_type; ]]]'

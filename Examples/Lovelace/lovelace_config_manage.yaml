@@ -1,0 +1,243 @@
+﻿# This management view is mantained manually, not via the Python.
+# We edit this YAML directly to make changes.
+
+
+title: Manage
+path: manage
+icon: mdi:cog
+#type: sidebar
+cards:
+- type: vertical-stack
+  cards:
+  - type: custom:button-card
+    color_type: label-card
+    template: section-header
+    name: Rebuild Jellyboard YAMLs
+  - type: grid
+    square: false
+    columns: 3
+    cards:
+      - type: custom:button-card
+        styles:
+          card:
+            - --mdc-ripple-color: >
+                [[[
+                return 'var(--text-primary-color)';
+                ]]]
+            - --mdc-ripple-press-opacity: 0.5
+          icon:
+            - height: 40px
+          label:
+            - color: white
+            - font-size: 11px
+            - padding: 0px 5px
+        name: "All Libraries"
+        show_name: true
+        show_icon: true
+        icon: mdi:infinity
+        tap_action:
+          action: call-service
+          service: rest_command.rebuild_jellyboard_yaml_all
+      - type: custom:button-card
+        styles:
+          card:
+            - --mdc-ripple-color: >
+                [[[
+                return 'var(--text-primary-color)';
+                ]]]
+            - --mdc-ripple-press-opacity: 0.5
+          icon:
+            - height: 40px
+          label:
+            - color: white
+            - font-size: 11px
+            - padding: 0px 5px
+        name: "TV"
+        show_name: true
+        show_icon: true
+        icon: steve:media-icon-tvshows
+        tap_action:
+          action: call-service
+          service: rest_command.rebuild_jellyboard_yaml_tv
+      - type: custom:button-card
+        styles:
+          card:
+            - --mdc-ripple-color: >
+                [[[
+                return 'var(--text-primary-color)';
+                ]]]
+            - --mdc-ripple-press-opacity: 0.5
+          icon:
+            - height: 40px
+          label:
+            - color: white
+            - font-size: 11px
+            - padding: 0px 5px
+        name: "Kids TV"
+        show_name: true
+        show_icon: true
+        icon: steve:media-icon-tvshowskids
+        tap_action:
+          action: call-service
+          service: rest_command.rebuild_jellyboard_yaml_tv_kids
+      - type: custom:button-card
+        styles:
+          card:
+            - --mdc-ripple-color: >
+                [[[
+                return 'var(--text-primary-color)';
+                ]]]
+            - --mdc-ripple-press-opacity: 0.5
+          icon:
+            - height: 40px
+          label:
+            - color: white
+            - font-size: 11px
+            - padding: 0px 5px
+        name: "Movies"
+        show_name: true
+        show_icon: true
+        icon: steve:media-icon-movies
+        tap_action:
+          action: call-service
+          service: rest_command.rebuild_jellyboard_yaml_movies
+      - type: custom:button-card
+        styles:
+          card:
+            - --mdc-ripple-color: >
+                [[[
+                return 'var(--text-primary-color)';
+                ]]]
+            - --mdc-ripple-press-opacity: 0.5
+          icon:
+            - height: 40px
+          label:
+            - color: white
+            - font-size: 11px
+            - padding: 0px 5px
+        name: "Kids Movies"
+        show_name: true
+        show_icon: true
+        icon: steve:media-icon-movieskids
+        tap_action:
+          action: call-service
+          service: rest_command.rebuild_jellyboard_yaml_movies_kids
+      - type: custom:button-card
+        styles:
+          card:
+            - --mdc-ripple-color: >
+                [[[
+                return 'var(--text-primary-color)';
+                ]]]
+            - --mdc-ripple-press-opacity: 0.5
+          icon:
+            - height: 40px
+          label:
+            - color: white
+            - font-size: 11px
+            - padding: 0px 5px
+        name: "Christmas Movies"
+        show_name: true
+        show_icon: true
+        icon: steve:media-icon-movieschristmas
+        tap_action:
+          action: call-service
+          service: rest_command.rebuild_jellyboard_yaml_movies_christmas
+  - type: custom:button-card
+    color_type: label-card
+    template: section-header
+    name: Rebuild Episode ID Cache
+  - type: grid
+    square: true
+    columns: 2
+    cards:
+      - type: custom:button-card
+        styles:
+          card:
+            - --mdc-ripple-color: >
+                [[[
+                return 'var(--text-primary-color)';
+                ]]]
+            - --mdc-ripple-press-opacity: 0.5
+          icon:
+            - height: 40px
+          label:
+            - color: white
+            - font-size: 11px
+            - padding: 0px 5px
+        name: "TV"
+        show_name: true
+        show_icon: true
+        icon: steve:media-icon-tvshows
+        tap_action:
+          action: call-service
+          service: rest_command.rebuild_jellyboard_episode_cache_tv
+      - type: custom:button-card
+        styles:
+          card:
+            - --mdc-ripple-color: >
+                [[[
+                return 'var(--text-primary-color)';
+                ]]]
+            - --mdc-ripple-press-opacity: 0.5
+          icon:
+            - height: 40px
+          label:
+            - color: white
+            - font-size: 11px
+            - padding: 0px 5px
+        name: "Kids TV"
+        show_name: true
+        show_icon: true
+        icon: steve:media-icon-tvshowskids
+        tap_action:
+          action: call-service
+          service: rest_command.rebuild_jellyboard_episode_cache_tv_kids
+- type: vertical-stack
+  cards: 
+    - type: custom:button-card
+      color_type: label-card
+      template: section-header
+      name: Control
+    - type: custom:button-card
+      name: Reboot TV
+      confirmation:
+        text: Are you sure you want to reboot the TV?
+      size: 40px
+      entity: switch.wifi_plug_tv_socket_1
+      card:
+        - height: 100px
+        - '--mdc-ripple-color': blue
+        - '--mdc-ripple-press-opacity': 0.5
+      show_name: true
+      show_icon: true
+      show_label: true
+      label: >
+        [[[
+          return 'TV Outlet: ' + states['switch.wifi_plug_tv_socket_1'].state;
+        ]]]
+      tap_action:
+        action: call-service
+        service: script.reboot_living_room_tv
+        target: {}
+      styles:
+        label:
+          - font-size: 11px
+          - color: gray
+- type: vertical-stack
+  cards: 
+  - type: custom:button-card
+    color_type: label-card
+    template: section-header
+    name: Media Players
+  - type: conditional
+    conditions:
+      - entity: media_player.living_room_tv_jelly
+        state_not: 'off'
+      - entity: media_player.living_room_tv_jelly
+        state_not: idle
+      - entity: media_player.living_room_tv_jelly
+        state_not: unavailable
+    card:
+      type: media-control
+      entity: media_player.living_room_tv_jelly

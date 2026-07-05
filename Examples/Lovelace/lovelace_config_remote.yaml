@@ -1,0 +1,366 @@
+﻿# This remote control view is mantained manually, not via the Python.
+# We edit this YAML directly to make changes.
+
+subview: false
+title: Remote
+icon: mdi:remote-tv
+path: remote
+cards:
+  - type: vertical-stack
+    cards:
+      - type: custom:button-card
+        color_type: label-card
+        template: section-header
+        name: TV Remote
+        tap_action:
+          action: navigate
+          navigation_path: /dashboard-media/remote-fat
+        hold_action:
+          action: none
+      - square: false
+        columns: 3
+        type: grid
+        cards:
+          - type: button
+            icon: mdi:power
+            tap_action:
+              action: call-service
+              service: remote.toggle
+              data: {}
+              target:
+                entity_id: remote.living_room_tv
+            hold_action:
+              action: none
+          - type: button
+            icon: mdi:arrow-up-bold
+            tap_action:
+              action: call-service
+              service: remote.send_command
+              data:
+                command: DPAD_UP
+              target:
+                entity_id: remote.living_room_tv
+            hold_action:
+              action: none
+          - show_name: true
+            show_icon: true
+            type: button
+            icon: mdi:folder-play
+            name: Select Media
+            tap_action:
+              action: navigate
+              navigation_path: /dashboard-media/tvshowskids
+            hold_action:
+              action: none
+          - type: button
+            icon: mdi:arrow-left-bold
+            tap_action:
+              action: call-service
+              service: remote.send_command
+              data:
+                command: DPAD_LEFT
+              target:
+                entity_id: remote.living_room_tv
+            hold_action:
+              action: none
+          - type: button
+            icon: mdi:circle
+            tap_action:
+              action: call-service
+              service: remote.send_command
+              data:
+                command: DPAD_CENTER
+              target:
+                entity_id: remote.living_room_tv
+            hold_action:
+              action: call-service
+              service: remote.send_command
+              data:
+                command: DPAD_CENTER
+                hold_secs: 0.5
+              target:
+                entity_id: remote.living_room_tv
+          - type: button
+            icon: mdi:arrow-right-bold
+            tap_action:
+              action: call-service
+              service: remote.send_command
+              data:
+                command: DPAD_RIGHT
+              target:
+                entity_id: remote.living_room_tv
+            hold_action:
+              action: none
+          - show_name: true
+            show_icon: true
+            type: button
+            icon: mdi:arrow-left
+            tap_action:
+              action: call-service
+              service: remote.send_command
+              data:
+                command: BACK
+              target:
+                entity_id: remote.living_room_tv
+            hold_action:
+              action: call-service
+              service: remote.send_command
+              data:
+                command: BACK
+                hold_secs: 0.5
+              target:
+                entity_id: remote.living_room_tv
+          - type: button
+            icon: mdi:arrow-down-bold
+            tap_action:
+              action: call-service
+              service: remote.send_command
+              data:
+                command: DPAD_DOWN
+              target:
+                entity_id: remote.living_room_tv
+            hold_action:
+              action: none
+          - type: button
+            icon: mdi:home-outline
+            tap_action:
+              action: call-service
+              service: remote.send_command
+              data:
+                command: HOME
+              target:
+                entity_id: remote.living_room_tv
+            hold_action:
+              action: call-service
+              service: remote.send_command
+              data:
+                command: HOME
+                hold_secs: 0.5
+              target:
+                entity_id: remote.living_room_tv
+      - type: entities
+        entities: []
+      - square: false
+        columns: 3
+        type: grid
+        cards:
+          - type: button
+            icon: mdi:skip-previous
+            tap_action:
+              action: call-service
+              service: remote.send_command
+              data:
+                command: MEDIA_PREVIOUS
+              target:
+                entity_id: remote.living_room_tv
+            hold_action:
+              action: call-service
+              service: remote.send_command
+              data:
+                command: MEDIA_REWIND
+              target:
+                entity_id: remote.living_room_tv
+          - type: button
+            icon: mdi:play-pause
+            tap_action:
+              action: call-service
+              service: remote.send_command
+              data:
+                command: MEDIA_PLAY_PAUSE
+              target:
+                entity_id: remote.living_room_tv
+            hold_action:
+              action: call-service
+              service: remote.send_command
+              data:
+                command: MEDIA_STOP
+              target:
+                entity_id: remote.living_room_tv
+          - type: button
+            icon: mdi:skip-next
+            tap_action:
+              action: call-service
+              service: remote.send_command
+              data:
+                command: MEDIA_NEXT
+              target:
+                entity_id: remote.living_room_tv
+            hold_action:
+              action: call-service
+              service: remote.send_command
+              data:
+                command: MEDIA_FAST_FORWARD
+              target:
+                entity_id: remote.living_room_tv
+          - type: button
+            icon: mdi:volume-off
+            tap_action:
+              action: call-service
+              service: remote.send_command
+              data:
+                command: MUTE
+              target:
+                entity_id: remote.living_room_tv
+            hold_action:
+              action: none
+          - type: button
+            icon: mdi:volume-medium
+            tap_action:
+              action: call-service
+              service: remote.send_command
+              data:
+                command: VOLUME_DOWN
+              target:
+                entity_id: remote.living_room_tv
+            hold_action:
+              action: none
+          - type: button
+            icon: mdi:volume-high
+            tap_action:
+              action: call-service
+              service: remote.send_command
+              data:
+                command: VOLUME_UP
+              target:
+                entity_id: remote.living_room_tv
+            hold_action:
+              action: none
+      - type: entities
+        entities: []
+      - square: false
+        columns: 3
+        type: grid
+        cards:
+          - show_name: true
+            show_icon: true
+            type: button
+            icon: mdi:youtube
+            tap_action:
+              action: call-service
+              service: remote.turn_on
+              data:
+                activity: vnd.youtube.launch://www.youtube.com
+              target:
+                entity_id: remote.living_room_tv
+            hold_action:
+              action: none
+            name: YouTube
+          - show_name: true
+            show_icon: true
+            type: button
+            icon: phu:pbs
+            tap_action:
+              action: call-service
+              service: remote.turn_on
+              data:
+                activity: https://pbskids.org/video
+              target:
+                entity_id: remote.living_room_tv
+            hold_action:
+              action: none
+            name: PBS Kids
+          - type: button
+            icon: mdi:netflix
+            name: Nertflux
+            tap_action:
+              action: call-service
+              service: remote.turn_on
+              data:
+                activity: netflix://
+              target:
+                entity_id: remote.living_room_tv
+            hold_action:
+              action: none
+          - show_name: true
+            show_icon: true
+            type: button
+            icon: phu:jellyfin
+            tap_action:
+              action: call-service
+              service: remote.turn_on
+              data:
+                activity: org.jellyfin.androidtv
+              target:
+                entity_id: remote.living_room_tv
+            hold_action:
+              action: none
+            name: Jellyfin
+          - show_name: true
+            show_icon: true
+            type: button
+            icon: mdi:nintendo-wii
+            tap_action:
+              action: perform-action
+              perform_action: script.change_living_room_tv_input_component
+            hold_action:
+              action: none
+            name: Wii
+          - show_name: true
+            show_icon: true
+            type: button
+            icon: mdi:nintendo-switch
+            tap_action:
+              action: perform-action
+              perform_action: script.change_living_room_tv_input_hdmi1
+            hold_action:
+              action: none
+            name: Switch
+  - type: vertical-stack
+    view_layout:
+      position: sidebar
+    cards:
+      - type: vertical-stack
+        visibility:
+          - condition: or
+            conditions:
+              - condition: and
+                conditions:
+                  - condition: state
+                    entity: media_player.living_room_tv_jelly
+                    state_not: idle
+                  - condition: state
+                    entity: media_player.living_room_tv_jelly
+                    state_not: "off"
+                  - condition: state
+                    entity: media_player.living_room_tv_jelly
+                    state_not: unavailable
+              - condition: and
+                conditions:
+                  - condition: state
+                    entity: media_player.living_room_tv
+                    state_not: idle
+                  - condition: state
+                    entity: media_player.living_room_tv
+                    state_not: "off"
+                  - condition: state
+                    entity: media_player.living_room_tv
+                    state_not: unavailable
+        cards:
+          - type: vertical-stack
+            cards:
+              - type: custom:button-card
+                color_type: label-card
+                template: section-header
+                name: Media Players
+              - type: conditional
+                conditions:
+                  - entity: media_player.living_room_tv_jelly
+                    state_not: 'off'
+                  - entity: media_player.living_room_tv_jelly
+                    state_not: idle
+                  - entity: media_player.living_room_tv_jelly
+                    state_not: unavailable
+                card:
+                  type: media-control
+                  entity: media_player.living_room_tv_jelly
+              - type: conditional
+                conditions:
+                  - entity: media_player.living_room_tv
+                    state_not: 'off'
+                  - entity: media_player.living_room_tv
+                    state_not: idle
+                  - entity: media_player.living_room_tv
+                    state_not: unavailable
+                card:
+                  type: media-control
+                  entity: media_player.living_room_tv
