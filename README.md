@@ -124,7 +124,7 @@ Examples/HomeAssistant Rest Commands.txt
 - Jellyfin API token
 - Home Assistant
 - Home Assitant long-lived access token
-- SMB share accessible from the Python server (for Lovelace YAML generation)
+- Home Assistant SMB share accessible from the Python server (for Lovelace YAML generation)
 
 ---
 
