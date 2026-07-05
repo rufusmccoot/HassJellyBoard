@@ -121,6 +121,7 @@ Examples/HomeAssistant Rest Commands.txt
 
 - Jellyfin
 - Jellyfin **Webhooks** plugin
+- Jellyfin API token
 - Home Assistant
 - SMB share accessible from the Python server (for Lovelace YAML generation)
 
