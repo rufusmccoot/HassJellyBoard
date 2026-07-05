@@ -2,7 +2,7 @@
 
 HassJellyBoard is a lightweight Python web server that connects **Home Assistant** and **Jellyfin** to create a fast, family-friendly TV interface with support for random episodes, automatic Home Assistant dashboard generation, and playback automation.
 
-GitHub: https://github.com/rufusmccoot/HassJellyBoard
+<img src="Examples/Lovelace/lovelace_config_tvshowskids.PNG" width="700" alt="HassJellyBoard Dashboard">
 
 ---
 
