@@ -1,0 +1,29 @@
+jellyfin_play_tv_based_libraries:
+  alias: Jellyfin Play TV Based Libraries
+  description: Launch Jellyfin on TV if needed, play a random episode for the given
+    series, and set state sensors.
+  fields:
+    media_id:
+      description: Jellyfin Series ID
+      example: 123456789abcdef
+    media_type:
+      description: We are not using this
+      example: Scrotum
+  sequence:
+  - variables:
+      series_id: '{{ media_id }}'
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ states(''media_player.living_room_tv_jelly'') in [''unavailable'',
+          ''idle''] }}'
+      sequence:
+      - data:
+          activity: org.jellyfin.androidtv
+        target:
+          entity_id: remote.living_room_tv
+        action: remote.turn_on
+      - delay: 00:00:01
+  - data:
+      series_id: '{{ series_id }}'
+    action: rest_command.jellyboard_play_random_episode

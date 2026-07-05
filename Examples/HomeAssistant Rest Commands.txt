@@ -1,0 +1,45 @@
+rebuild_jellyboard_yaml_tv:
+  url: "http://server_and_port_where_the_python_webserver_is/rebuild_yaml/2-TV"
+  method: POST
+
+rebuild_jellyboard_yaml_tv_kids:
+  url: "http://server_and_port_where_the_python_webserver_is/rebuild_yaml/1-TV%20Kids"
+  method: POST
+
+rebuild_jellyboard_yaml_movies:
+  url: "http://server_and_port_where_the_python_webserver_is/rebuild_yaml/5-Movies"
+  method: POST
+
+rebuild_jellyboard_yaml_movies_kids:
+  url: "http://server_and_port_where_the_python_webserver_is/rebuild_yaml/3-Movies%20Kids"
+  method: POST
+
+rebuild_jellyboard_yaml_movies_christmas:
+  url: "http://server_and_port_where_the_python_webserver_is/rebuild_yaml/4-Movies%20Christmas"
+  method: POST
+
+rebuild_jellyboard_yaml_all:
+  url: "http://server_and_port_where_the_python_webserver_is/rebuild_yaml/all"
+  method: POST
+
+rebuild_jellyboard_episode_cache_tv:
+  url: "http://server_and_port_where_the_python_webserver_is/rebuild_cache/2-TV"
+  method: POST
+
+rebuild_jellyboard_episode_cache_tv_kids:
+  url: "http://server_and_port_where_the_python_webserver_is/rebuild_cache/1-TV%20Kids"
+  method: POST
+
+jellyboard_play_random_episode:
+  url: "http://server_and_port_where_the_python_webserver_is/play_random_episode?series_id={{ series_id }}"
+  method: POST
+  headers:
+    Content-Type: "application/json"
+  payload: '{"series_id": "{{ series_id }}"}'
+
+jellyboard_play_movie:
+  url: "http://server_and_port_where_the_python_webserver_is/play_movie?item_id={{ item_id }}"
+  method: POST
+  headers:
+    Content-Type: "application/json"
+  payload: '{"item_id": "{{ item_id }}"}'
